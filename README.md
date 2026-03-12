@@ -1,12 +1,13 @@
-# Hamiltonian Witness Periodic Results
+# Learning Hamiltonians using Quantum Equilibration
 
-This repository contains Python code and JSON outputs for numerical certification of local nondegeneracy for periodic local Pauli Hamiltonian families.
+This repository contains Python code and data for Hamiltonian witness computations and TFIM scaling experiments.
 
-## Files
+## Repository Structure
 
-- `witness_structured.py`: main script used for the periodic certification sweeps
-- `structured_fast_50.json`: validation results
-- `structured_push_50.json`: larger periodic push results
+- `witness_hamiltonians/witness_structured.py`: main script used for periodic certification sweeps
+- `witness_hamiltonians/structured_fast_50.json`: validation results
+- `witness_hamiltonians/structured_push_50.json`: larger periodic push results
+- `TFIM/TFIM_commutator_AH_scaling.py`: TFIM commutator scaling script
 
 ## Notes
 
