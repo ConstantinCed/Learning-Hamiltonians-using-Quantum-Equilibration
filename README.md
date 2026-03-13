@@ -7,7 +7,9 @@ This repository contains Python code and data for Hamiltonian witness computatio
 - `witness_hamiltonians/witness_structured.py`: main script used for periodic certification sweeps
 - `witness_hamiltonians/structured_fast_50.json`: validation results
 - `witness_hamiltonians/structured_push_50.json`: larger periodic push results
-- `TFIM/TFIM_commutator_AH_scaling.py`: TFIM commutator scaling script
+- `TFIM/AH_commutator_scaling/TFIM_commutator_AH_scaling.py`: TFIM commutator scaling script
+- `TFIM/AU_scaling_vs_t/tfim__A_U_comm_exponent_vs_t.py`: TFIM AU commutator exponent vs time sweep
+- `TFIM/AU_scaling_vs_t/alpha_vs_t.csv`: CSV output from AU scaling sweep
 
 ## Notes
 
