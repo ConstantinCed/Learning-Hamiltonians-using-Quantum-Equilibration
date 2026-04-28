@@ -1,6 +1,6 @@
 % --------------------------------------------------------------------
-%  Smoothed-analysis commutator gap, n = 50, linear axes.
-%  Requires: tfim_smoothed_gap.csv (cols: n, eps, median, q25, q75, n_samples)
+%  Smoothed-analysis commutator gap, n = 10, 20, 30, 40, 50, linear axes.
+%  Requires: tfim_smoothed_gap.csv  (cols: n, eps, mean, n_samples)
 %  H(eps) = sum_i Z_i Z_{i+1} + eps * sum_i g_i X_i ;  g_i ~ N(0, 1).
 % --------------------------------------------------------------------
 \documentclass[border=4pt]{standalone}
@@ -9,9 +9,12 @@
 \usepackage{pgfplotstable}
 \usepackage{amsmath,amssymb}
 \pgfplotsset{compat=1.18}
-\usepgfplotslibrary{fillbetween}
 
-\definecolor{royalblue}{HTML}{1f6fb8}
+\definecolor{c10}{HTML}{1f6fb8}
+\definecolor{c20}{HTML}{2c8a3c}
+\definecolor{c30}{HTML}{d65c5c}
+\definecolor{c40}{HTML}{8e44ad}
+\definecolor{c50}{HTML}{e08e1c}
 
 \begin{document}
 
@@ -22,31 +25,40 @@
     width=12cm,
     height=7.5cm,
     xlabel={perturbation strength $\varepsilon$},
-    ylabel={projected commutator gap $\pi_H(\varepsilon)$},
+    ylabel={commutator gap $\pi_H(\varepsilon)$},
     xmin=-1.05, xmax=1.05,
     ymin=0,
     grid=both,
     grid style={line width=.1pt, draw=gray!25},
     major grid style={line width=.2pt, draw=gray!50},
     legend style={font=\small, at={(0.5,0.98)}, anchor=north,
-                  draw=none, fill=white, fill opacity=0.85, text opacity=1},
-    title={$H(\varepsilon)=\sum Z_iZ_{i+1}+\varepsilon\sum g_i X_i$,\ $g_i\sim\mathcal{N}(0,1)$,\ $n=50$,\ $30$ samples per $\varepsilon\neq 0$},
+                  draw=none, fill=white, fill opacity=0.85, text opacity=1,
+                  legend columns=5},
+    title={$H(\varepsilon)=\sum Z_iZ_{i+1}+\varepsilon\sum g_i X_i$,\ $g_i\sim\mathcal{N}(0,1)$,\ $30$ samples per $\varepsilon\neq 0$},
     title style={font=\small},
     scaled y ticks=base 10:5,
     ytick scale label code/.code={\pgfmathprintnumber{#1}\,$\times 10^{-5}$},
 ]
 
-% IQR band
-\addplot+[name path=q25, draw=none, forget plot]
-  table[x=eps, y=q25]{\gapdata};
-\addplot+[name path=q75, draw=none, forget plot]
-  table[x=eps, y=q75]{\gapdata};
-\addplot[royalblue!25, forget plot] fill between[of=q25 and q75];
+\addplot+[mark=*, mark size=1.4pt, color=c10, thick]
+  table[x=eps, y=mean, restrict expr to domain={\thisrow{n}}{10:10}]{\gapdata};
+\addlegendentry{$n=10$}
 
-% Median
-\addplot+[mark=*, mark size=1.5pt, color=royalblue, thick]
-  table[x=eps, y=median]{\gapdata};
-\addlegendentry{median $\pi_H(\varepsilon)$  (band: 25\%--75\%)}
+\addplot+[mark=square*, mark size=1.4pt, color=c20, thick]
+  table[x=eps, y=mean, restrict expr to domain={\thisrow{n}}{20:20}]{\gapdata};
+\addlegendentry{$n=20$}
+
+\addplot+[mark=triangle*, mark size=1.6pt, color=c30, thick]
+  table[x=eps, y=mean, restrict expr to domain={\thisrow{n}}{30:30}]{\gapdata};
+\addlegendentry{$n=30$}
+
+\addplot+[mark=diamond*, mark size=1.6pt, color=c40, thick]
+  table[x=eps, y=mean, restrict expr to domain={\thisrow{n}}{40:40}]{\gapdata};
+\addlegendentry{$n=40$}
+
+\addplot+[mark=pentagon*, mark size=1.6pt, color=c50, thick]
+  table[x=eps, y=mean, restrict expr to domain={\thisrow{n}}{50:50}]{\gapdata};
+\addlegendentry{$n=50$}
 
 \draw[dashed, gray] (axis cs:0,\pgfkeysvalueof{/pgfplots/ymin})
                  -- (axis cs:0,\pgfkeysvalueof{/pgfplots/ymax});

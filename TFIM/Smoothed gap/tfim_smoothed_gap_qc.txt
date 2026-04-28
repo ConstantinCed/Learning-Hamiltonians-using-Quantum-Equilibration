@@ -1,1 +1,5 @@
+n=10: ||Gamma(H0) h0||_inf = 0.000e+00   pi_proj(H0) = -4.898e-17
+n=20: ||Gamma(H0) h0||_inf = 0.000e+00   pi_proj(H0) = -2.832e-16
+n=30: ||Gamma(H0) h0||_inf = 0.000e+00   pi_proj(H0) = -2.253e-16
+n=40: ||Gamma(H0) h0||_inf = 0.000e+00   pi_proj(H0) = -3.953e-16
 n=50: ||Gamma(H0) h0||_inf = 0.000e+00   pi_proj(H0) = -4.488e-16
