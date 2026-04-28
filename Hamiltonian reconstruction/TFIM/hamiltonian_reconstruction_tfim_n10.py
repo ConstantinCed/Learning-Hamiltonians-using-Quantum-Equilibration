@@ -96,7 +96,7 @@ if __name__ == "__main__":
     t = float(rng_t.uniform(1000.0, 2000.0))
 
     n_probes = 1000
-    shots = 50_000
+    shots = 20_000
 
     print(f"\n{'='*56}")
     print(f" TFIM reconstruction  n={n}  |V|={2*n-1}")
