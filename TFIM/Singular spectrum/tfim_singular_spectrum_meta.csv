@@ -1,0 +1,12 @@
+key,value
+n,10
+t,400.0
+n_probes,1000
+|V|,19
+sigma_1,9.49118930295745e-16
+sigma_2,0.0005444881880171964
+ratio_sigma2_sigma1,573677513573.0715
+residual_X_h,9.808101726340368e-16
+overlap_hhat_h,1.0
+seed_instance,123
+seed_probes,456

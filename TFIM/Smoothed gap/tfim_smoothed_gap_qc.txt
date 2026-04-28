@@ -1,0 +1,3 @@
+n=8: ||Gamma(H0) h0||_inf = 0.000e+00   pi_proj(H0) = -8.725e-66
+n=10: ||Gamma(H0) h0||_inf = 0.000e+00   pi_proj(H0) = -4.898e-17
+n=12: ||Gamma(H0) h0||_inf = 0.000e+00   pi_proj(H0) = -3.129e-17

@@ -1,0 +1,56 @@
+% --------------------------------------------------------------------
+%  Singular spectrum of the learning matrix X for an open-boundary TFIM.
+%  Requires: tfim_singular_spectrum.csv  (cols: j, sigma)
+% --------------------------------------------------------------------
+\documentclass[border=4pt]{standalone}
+
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{amsmath,amssymb}
+\pgfplotsset{compat=1.18}
+
+\definecolor{royalblue}{HTML}{1f6fb8}
+\definecolor{softred}{HTML}{d65c5c}
+
+\begin{document}
+
+\pgfplotstableread[col sep=comma]{tfim_singular_spectrum.csv}\spectrum
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=11cm,
+    height=7cm,
+    xlabel={singular-value index $j$ (sorted ascending)},
+    ylabel={$\sigma_j(X)$},
+    ymode=log,
+    log basis y=10,
+    grid=both,
+    grid style={line width=.1pt, draw=gray!25},
+    major grid style={line width=.2pt, draw=gray!50},
+    xmin=0,
+    enlarge x limits=0.05,
+    legend style={font=\small, at={(0.98,0.02)}, anchor=south east,
+                  draw=none, fill=white, fill opacity=0.85, text opacity=1},
+    title={Open-boundary TFIM,\ $n=10$,\ $t=400$,\ $N_S=10^3$},
+    title style={font=\small},
+]
+
+\addplot+[only marks, mark=*, mark size=1.6pt, color=royalblue]
+    table[x=j, y=sigma]{\spectrum};
+\addlegendentry{$\sigma_j(X)$}
+
+% Highlight the smallest singular value (index j=1 after ascending sort).
+\addplot+[only marks, mark=*, mark size=2.6pt, color=softred]
+    table[x=j, y=sigma, restrict expr to domain={\thisrow{j}}{0:1}]{\spectrum};
+\addlegendentry{$\sigma_1$ (null direction $\approx h$)}
+
+\node[anchor=west, font=\scriptsize, color=softred]
+    at (axis cs:1.6, 1e-13) {$\sigma_1\approx 10^{-15}$ (machine precision)};
+
+\node[anchor=west, font=\scriptsize, color=royalblue]
+    at (axis cs:2.5, 1e-3) {gap $\sigma_2/\sigma_1 \sim 10^{11}$};
+
+\end{axis}
+\end{tikzpicture}
+
+\end{document}
