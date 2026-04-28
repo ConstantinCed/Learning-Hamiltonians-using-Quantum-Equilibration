@@ -1,7 +1,7 @@
 % --------------------------------------------------------------------
-%  Smoothed-analysis commutator gap for the structured TFIM.
+%  Smoothed-analysis commutator gap, n = 50, linear axes.
 %  Requires: tfim_smoothed_gap.csv (cols: n, eps, median, q25, q75, n_samples)
-%  H(eps) = sum_i Z_i Z_{i+1} + eps sum_i g_i X_i ;  g_i ~ N(0, 1).
+%  H(eps) = sum_i Z_i Z_{i+1} + eps * sum_i g_i X_i ;  g_i ~ N(0, 1).
 % --------------------------------------------------------------------
 \documentclass[border=4pt]{standalone}
 
@@ -12,80 +12,44 @@
 \usepgfplotslibrary{fillbetween}
 
 \definecolor{royalblue}{HTML}{1f6fb8}
-\definecolor{softred}{HTML}{d65c5c}
-\definecolor{forestgreen}{HTML}{2c8a3c}
 
 \begin{document}
 
 \pgfplotstableread[col sep=comma]{tfim_smoothed_gap.csv}\gapdata
 
-% Per-n filtered tables. Use \pgfplotstabletypeset-like select via expr.
-\pgfplotstableread[col sep=comma]{tfim_smoothed_gap.csv}\gapall
-
 \begin{tikzpicture}
 \begin{axis}[
     width=12cm,
     height=7.5cm,
-    xlabel={perturbation strength $\varepsilon$  (\,$\varepsilon=0$ shown at left edge\,)},
+    xlabel={perturbation strength $\varepsilon$},
     ylabel={projected commutator gap $\pi_H(\varepsilon)$},
-    xmode=log, log basis x=10,
-    ymode=log, log basis y=10,
-    xmin=2e-5, xmax=2,
-    ymin=1e-13, ymax=1e-1,
+    xmin=-1.05, xmax=1.05,
+    ymin=0,
     grid=both,
     grid style={line width=.1pt, draw=gray!25},
     major grid style={line width=.2pt, draw=gray!50},
-    legend style={font=\small, at={(0.02,0.98)}, anchor=north west,
+    legend style={font=\small, at={(0.5,0.98)}, anchor=north,
                   draw=none, fill=white, fill opacity=0.85, text opacity=1},
-    title={$H(\varepsilon)=\sum Z_iZ_{i+1}+\varepsilon\sum g_i X_i$,\ $g_i\sim\mathcal{N}(0,1)$,\
-           $50$ samples per $\varepsilon>0$},
+    title={$H(\varepsilon)=\sum Z_iZ_{i+1}+\varepsilon\sum g_i X_i$,\ $g_i\sim\mathcal{N}(0,1)$,\ $n=50$,\ $30$ samples per $\varepsilon\neq 0$},
     title style={font=\small},
+    scaled y ticks=base 10:5,
+    ytick scale label code/.code={\pgfmathprintnumber{#1}\,$\times 10^{-5}$},
 ]
 
-% ── n = 8 ──
-\addplot+[name path=q25_8, draw=none, forget plot]
-  table[x expr={\thisrow{eps}==0 ? 3e-5 : \thisrow{eps}}, y=q25,
-        restrict expr to domain={\thisrow{n}}{8:8}]{\gapall};
-\addplot+[name path=q75_8, draw=none, forget plot]
-  table[x expr={\thisrow{eps}==0 ? 3e-5 : \thisrow{eps}}, y=q75,
-        restrict expr to domain={\thisrow{n}}{8:8}]{\gapall};
-\addplot[royalblue!25, forget plot] fill between[of=q25_8 and q75_8];
-\addplot+[mark=*, mark size=1.6pt, color=royalblue, thick]
-  table[x expr={\thisrow{eps}==0 ? 3e-5 : \thisrow{eps}}, y=median,
-        restrict expr to domain={\thisrow{n}}{8:8}]{\gapall};
-\addlegendentry{$n=8$}
+% IQR band
+\addplot+[name path=q25, draw=none, forget plot]
+  table[x=eps, y=q25]{\gapdata};
+\addplot+[name path=q75, draw=none, forget plot]
+  table[x=eps, y=q75]{\gapdata};
+\addplot[royalblue!25, forget plot] fill between[of=q25 and q75];
 
-% ── n = 10 ──
-\addplot+[name path=q25_10, draw=none, forget plot]
-  table[x expr={\thisrow{eps}==0 ? 3e-5 : \thisrow{eps}}, y=q25,
-        restrict expr to domain={\thisrow{n}}{10:10}]{\gapall};
-\addplot+[name path=q75_10, draw=none, forget plot]
-  table[x expr={\thisrow{eps}==0 ? 3e-5 : \thisrow{eps}}, y=q75,
-        restrict expr to domain={\thisrow{n}}{10:10}]{\gapall};
-\addplot[softred!25, forget plot] fill between[of=q25_10 and q75_10];
-\addplot+[mark=square*, mark size=1.5pt, color=softred, thick]
-  table[x expr={\thisrow{eps}==0 ? 3e-5 : \thisrow{eps}}, y=median,
-        restrict expr to domain={\thisrow{n}}{10:10}]{\gapall};
-\addlegendentry{$n=10$}
+% Median
+\addplot+[mark=*, mark size=1.5pt, color=royalblue, thick]
+  table[x=eps, y=median]{\gapdata};
+\addlegendentry{median $\pi_H(\varepsilon)$  (band: 25\%--75\%)}
 
-% ── n = 12 ──
-\addplot+[name path=q25_12, draw=none, forget plot]
-  table[x expr={\thisrow{eps}==0 ? 3e-5 : \thisrow{eps}}, y=q25,
-        restrict expr to domain={\thisrow{n}}{12:12}]{\gapall};
-\addplot+[name path=q75_12, draw=none, forget plot]
-  table[x expr={\thisrow{eps}==0 ? 3e-5 : \thisrow{eps}}, y=q75,
-        restrict expr to domain={\thisrow{n}}{12:12}]{\gapall};
-\addplot[forestgreen!25, forget plot] fill between[of=q25_12 and q75_12];
-\addplot+[mark=triangle*, mark size=1.8pt, color=forestgreen, thick]
-  table[x expr={\thisrow{eps}==0 ? 3e-5 : \thisrow{eps}}, y=median,
-        restrict expr to domain={\thisrow{n}}{12:12}]{\gapall};
-\addlegendentry{$n=12$}
-
-% Mark eps = 0 column.
-\draw[dashed, gray]
-  (axis cs:3e-5,1e-13) -- (axis cs:3e-5,1e-1);
-\node[anchor=south, gray, font=\scriptsize]
-  at (axis cs:3e-5, 1e-13) {$\varepsilon=0$};
+\draw[dashed, gray] (axis cs:0,\pgfkeysvalueof{/pgfplots/ymin})
+                 -- (axis cs:0,\pgfkeysvalueof{/pgfplots/ymax});
 
 \end{axis}
 \end{tikzpicture}

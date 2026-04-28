@@ -170,9 +170,9 @@ def projected_min_eig(G, h_vec):
 #  Main
 # ──────────────────────────────────────────────────
 def main():
-    n_list = [8, 10, 12]
-    eps_grid = [0.0, 1e-4, 3e-4, 1e-3, 3e-3, 1e-2, 3e-2, 1e-1, 3e-1, 1.0]
-    n_samples = 50          # for eps > 0
+    n = 50
+    eps_grid = np.round(np.linspace(-1.0, 1.0, 41), 6).tolist()
+    n_samples = 30          # for eps != 0
     seed = 20250428
 
     out_dir = Path(__file__).resolve().parent
@@ -181,44 +181,41 @@ def main():
 
     rows = []
     qc_lines = []
-    for n in n_list:
-        labels, P_basis = build_search_basis(n)
-        m = len(P_basis)
-        # ZZ-block coefficient vector indices
-        idx_X = list(range(0, n))
-        idx_ZZ = list(range(n, m))
-        # h0 = ZZ-only base
-        h_zz = np.zeros(m); h_zz[idx_ZZ] = 1.0
-        # QC: [H0, H0] = 0 -> Gamma h0 ~ 0
-        G0 = gamma_matrix(P_basis, h_zz)
-        qc_lines.append(
-            f"n={n}: ||Gamma(H0) h0||_inf = {np.max(np.abs(G0 @ h_zz)):.3e}"
-            f"   pi_proj(H0) = {projected_min_eig(G0, h_zz):.3e}"
-        )
+    labels, P_basis = build_search_basis(n)
+    m = len(P_basis)
+    idx_X = list(range(0, n))
+    idx_ZZ = list(range(n, m))
+    # h0 = ZZ-only base
+    h_zz = np.zeros(m); h_zz[idx_ZZ] = 1.0
+    G0 = gamma_matrix(P_basis, h_zz)
+    qc_lines.append(
+        f"n={n}: ||Gamma(H0) h0||_inf = {np.max(np.abs(G0 @ h_zz)):.3e}"
+        f"   pi_proj(H0) = {projected_min_eig(G0, h_zz):.3e}"
+    )
 
-        rng = np.random.default_rng(seed + n)
-        print(f"\n[n={n}] |V_search|={m}")
-        for eps in eps_grid:
-            if eps == 0.0:
-                pi = projected_min_eig(G0, h_zz)
-                rows.append([n, eps, pi, pi, pi, 1])
-                print(f"  eps={eps:>8g}  pi_med={pi:.3e}  N=1 (det.)")
-                continue
-            vals = []
-            for s in range(n_samples):
-                g = rng.standard_normal(n)
-                h_vec = np.zeros(m)
-                h_vec[idx_X] = eps * g
-                h_vec[idx_ZZ] = 1.0
-                G = gamma_matrix(P_basis, h_vec)
-                vals.append(projected_min_eig(G, h_vec))
-            vals = np.asarray(vals)
-            med = float(np.median(vals))
-            q25 = float(np.quantile(vals, 0.25))
-            q75 = float(np.quantile(vals, 0.75))
-            rows.append([n, eps, med, q25, q75, n_samples])
-            print(f"  eps={eps:>8g}  pi_med={med:.3e}  "
-                  f"[{q25:.3e}, {q75:.3e}]  N={n_samples}")
+    rng = np.random.default_rng(seed + n)
+    print(f"\n[n={n}] |V_search|={m}")
+    for eps in eps_grid:
+        if eps == 0.0:
+            pi = projected_min_eig(G0, h_zz)
+            rows.append([n, eps, pi, pi, pi, 1])
+            print(f"  eps={eps:>+8.4f}  pi_med={pi:+.3e}  N=1 (det.)")
+            continue
+        vals = []
+        for s in range(n_samples):
+            g = rng.standard_normal(n)
+            h_vec = np.zeros(m)
+            h_vec[idx_X] = eps * g
+            h_vec[idx_ZZ] = 1.0
+            G = gamma_matrix(P_basis, h_vec)
+            vals.append(projected_min_eig(G, h_vec))
+        vals = np.asarray(vals)
+        med = float(np.median(vals))
+        q25 = float(np.quantile(vals, 0.25))
+        q75 = float(np.quantile(vals, 0.75))
+        rows.append([n, eps, med, q25, q75, n_samples])
+        print(f"  eps={eps:>+8.4f}  pi_med={med:.3e}  "
+              f"[{q25:.3e}, {q75:.3e}]  N={n_samples}")
 
     # ── CSV ──
     with open(csv_path, "w", newline="") as f:
