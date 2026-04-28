@@ -48,8 +48,7 @@ WORKERS      = {6: 14, 7: 14, 8: 12, 9: 8,  10: 4,  11: 2, 12: 1}
 T_MAX     = 400.0
 DT        = 2.0
 BASE_SEED = 20240101
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                          "output_instance")
+OUTPUT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ======================================================================
 # Pauli string descriptors (lightweight, no full d x d matrices)
