@@ -3,9 +3,9 @@
 Weak equilibration decay: self-contained numerics for random dense
 nearest-neighbor 2-local Hamiltonians.
 
-Computes and plots two quantities versus time:
-  M_gen(t)  = sigma_max(K(t))                  -- strengthened (operator-norm) bound
-  M_self(t) = sup_{|x|=1, x real} |x^T K(t) x| -- weak self-correlation bound
+Computes and plots the weak self-correlation (autocorrelation) bound
+
+  M_self(t) = sup_{|x|=1, x real} |x^T K(t) x|
 
 where K_{ab}(t) = (1/d) tr( E_a(t) E_b ) and {E_a} is an HS-orthonormal
 basis of V = W \cap H^perp. W is the space of 1-local + nearest-neighbor
@@ -13,7 +13,7 @@ basis of V = W \cap H^perp. W is the space of 1-local + nearest-neighbor
 
 This single script is fully self-contained: no external module
 dependencies beyond numpy, scipy, matplotlib, pandas. Outputs land in
-./output_instance/ (created on demand).
+the script's own folder.
 
 Usage:
     python weak_equilibration_decay.py
@@ -35,7 +35,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from itertools import product as iprod
-from scipy.linalg import eigh, svdvals
+from scipy.linalg import eigh
 from multiprocessing import Pool
 
 # ======================================================================
@@ -216,11 +216,6 @@ def compute_all_K(descriptors, V_coeffs, eigvals, U, t_array, d):
     return K_all
 
 
-def compute_M_gen(K):
-    """M_gen(t) = sigma_max(K(t))."""
-    return svdvals(K)[0]
-
-
 def compute_M_self(K):
     """
     M_self(t) = sup_{|x|=1, x real} |x^T K(t) x|.
@@ -277,23 +272,19 @@ def compute_single_realization(n, t_array, seed):
     del U
 
     n_times = len(t_array)
-    M_gen_array  = np.empty(n_times)
     M_self_array = np.empty(n_times)
     for ti in range(n_times):
-        M_gen_array[ti]  = compute_M_gen(K_all[ti])
         M_self_array[ti] = compute_M_self(K_all[ti])
 
     checks = {
         'w_orth_err': 0.0,
         'v_orth_err': v_orth_err,
         'h_proj_err': h_proj_err,
-        'M_gen_0':    M_gen_array[0],
         'M_self_0':   M_self_array[0],
-        'M_gen_max':  np.max(M_gen_array),
         'M_self_max': np.max(M_self_array),
         'dim_V':      dim_V,
     }
-    return M_gen_array, M_self_array, checks
+    return M_self_array, checks
 
 
 # ======================================================================
@@ -307,11 +298,11 @@ def make_time_grid():
 def _worker(args):
     n, t_array, seed = args
     try:
-        M_gen, M_self, checks = compute_single_realization(n, t_array, seed)
-        return n, seed, M_gen, M_self, checks, None
+        M_self, checks = compute_single_realization(n, t_array, seed)
+        return n, seed, M_self, checks, None
     except Exception:
         import traceback
-        return n, seed, None, None, None, traceback.format_exc()
+        return n, seed, None, None, traceback.format_exc()
 
 
 def flush_print(*args, **kwargs):
@@ -335,12 +326,11 @@ def run_all():
                     f"workers={n_workers} ===")
         t0 = time.time()
 
-        M_gen_all = []
         M_self_all = []
 
         with Pool(n_workers) as pool:
             for idx, result in enumerate(pool.imap_unordered(_worker, tasks)):
-                _, seed, M_gen, M_self, checks, err = result
+                _, seed, M_self, checks, err = result
                 elapsed = time.time() - t0
                 if err is not None:
                     flush_print(f"  [{idx+1}/{n_real}] seed={seed} "
@@ -348,14 +338,8 @@ def run_all():
                     continue
 
                 ok = True
-                if abs(checks["M_gen_0"] - 1.0) > 1e-6:
-                    flush_print(f"  WARNING: M_gen(0)={checks['M_gen_0']:.8f} != 1")
-                    ok = False
                 if abs(checks["M_self_0"] - 1.0) > 1e-6:
                     flush_print(f"  WARNING: M_self(0)={checks['M_self_0']:.8f} != 1")
-                    ok = False
-                if checks["M_gen_max"] > 1.0 + 1e-6:
-                    flush_print(f"  WARNING: M_gen max={checks['M_gen_max']:.8f} > 1")
                     ok = False
                 if checks["M_self_max"] > 1.0 + 1e-6:
                     flush_print(f"  WARNING: M_self max={checks['M_self_max']:.8f} > 1")
@@ -365,34 +349,25 @@ def run_all():
                 flush_print(f"  [{idx+1}/{n_real}] seed={seed} {status} "
                             f"({elapsed:.1f}s)")
 
-                M_gen_all.append(M_gen)
                 M_self_all.append(M_self)
 
         wall = time.time() - t0
         all_results[n] = {
-            "M_gen":  np.array(M_gen_all),
             "M_self": np.array(M_self_all),
         }
-        flush_print(f"  n={n} done: {len(M_gen_all)} realizations "
+        flush_print(f"  n={n} done: {len(M_self_all)} realizations "
                     f"in {wall:.1f}s\n")
 
     return t_array, all_results
 
 
 def save_csv(t_array, all_results):
-    rows_gen, rows_self = [], []
+    rows = []
     for n in N_VALUES:
-        if n not in all_results or all_results[n]["M_gen"].size == 0:
+        if n not in all_results or all_results[n]["M_self"].size == 0:
             continue
-        A = all_results[n]["M_gen"]
         B = all_results[n]["M_self"]
-        n_real = A.shape[0]
-
-        A_mean = np.mean(A, axis=0)
-        A_std  = np.std(A, axis=0, ddof=1) if n_real > 1 else np.zeros_like(A_mean)
-        A_med  = np.median(A, axis=0)
-        A_q25  = np.percentile(A, 25, axis=0)
-        A_q75  = np.percentile(A, 75, axis=0)
+        n_real = B.shape[0]
 
         B_mean = np.mean(B, axis=0)
         B_std  = np.std(B, axis=0, ddof=1) if n_real > 1 else np.zeros_like(B_mean)
@@ -401,25 +376,16 @@ def save_csv(t_array, all_results):
         B_q75  = np.percentile(B, 75, axis=0)
 
         for i, t in enumerate(t_array):
-            rows_gen.append({
-                "n": n, "t": t, "observable": "M_gen",
-                "mean": A_mean[i], "std": A_std[i],
-                "median": A_med[i], "q25": A_q25[i], "q75": A_q75[i],
-                "n_realizations": n_real,
-            })
-            rows_self.append({
-                "n": n, "t": t, "observable": "M_self",
+            rows.append({
+                "n": n, "t": t, "observable": "autocorrelation",
                 "mean": B_mean[i], "std": B_std[i],
                 "median": B_med[i], "q25": B_q25[i], "q75": B_q75[i],
                 "n_realizations": n_real,
             })
 
-    p1 = os.path.join(OUTPUT_DIR, "M_gen_data.csv")
-    p2 = os.path.join(OUTPUT_DIR, "M_self_data.csv")
-    pd.DataFrame(rows_gen).to_csv(p1, index=False, float_format="%.10g")
-    pd.DataFrame(rows_self).to_csv(p2, index=False, float_format="%.10g")
-    flush_print(f"Saved {p1}")
-    flush_print(f"Saved {p2}")
+    path = os.path.join(OUTPUT_DIR, "autocorrelation.csv")
+    pd.DataFrame(rows).to_csv(path, index=False, float_format="%.10g")
+    flush_print(f"Saved {path}")
 
 
 def make_plots(t_array, all_results):
@@ -436,33 +402,28 @@ def make_plots(t_array, all_results):
         'figure.dpi': 150,
     })
 
-    for obs_key, ylabel, fname in [
-        ("M_gen",  r"$M_{\mathrm{gen}}(t)$",  "M_gen"),
-        ("M_self", r"$M_{\mathrm{self}}(t)$", "M_self"),
-    ]:
-        fig, ax = plt.subplots(figsize=(7, 4.5))
-        for n in N_VALUES:
-            if n not in all_results or all_results[n][obs_key].size == 0:
-                continue
-            data = all_results[n][obs_key]
-            mean = np.mean(data, axis=0)
-            ax.plot(t_array, mean, color=colors[n], lw=1.4, label=f"$n={n}$")
-            if data.shape[0] > 1:
-                std = np.std(data, axis=0, ddof=1)
-                ax.fill_between(t_array, mean - std, mean + std,
-                                color=colors[n], alpha=0.15, linewidth=0)
-        ax.set_xlabel(r"$t$")
-        ax.set_ylabel(ylabel)
-        ax.set_xlim(0, T_MAX)
-        ax.set_ylim(-0.02, 1.05)
-        ax.grid(alpha=0.3, linewidth=0.5)
-        ax.legend(loc="upper right", framealpha=0.9)
-        fig.tight_layout()
-        for ext in ["png", "pdf"]:
-            path = os.path.join(OUTPUT_DIR, f"{fname}.{ext}")
-            fig.savefig(path, dpi=300, bbox_inches="tight")
-            flush_print(f"Saved {path}")
-        plt.close(fig)
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    for n in N_VALUES:
+        if n not in all_results or all_results[n]["M_self"].size == 0:
+            continue
+        data = all_results[n]["M_self"]
+        mean = np.mean(data, axis=0)
+        ax.plot(t_array, mean, color=colors[n], lw=1.4, label=f"$n={n}$")
+        if data.shape[0] > 1:
+            std = np.std(data, axis=0, ddof=1)
+            ax.fill_between(t_array, mean - std, mean + std,
+                            color=colors[n], alpha=0.15, linewidth=0)
+    ax.set_xlabel(r"$t$")
+    ax.set_ylabel(r"autocorrelation $M_{\mathrm{self}}(t)$")
+    ax.set_xlim(0, T_MAX)
+    ax.set_ylim(-0.02, 1.05)
+    ax.grid(alpha=0.3, linewidth=0.5)
+    ax.legend(loc="upper right", framealpha=0.9)
+    fig.tight_layout()
+    path = os.path.join(OUTPUT_DIR, "autocorrelation.png")
+    fig.savefig(path, dpi=300, bbox_inches="tight")
+    flush_print(f"Saved {path}")
+    plt.close(fig)
 
 
 # ======================================================================
