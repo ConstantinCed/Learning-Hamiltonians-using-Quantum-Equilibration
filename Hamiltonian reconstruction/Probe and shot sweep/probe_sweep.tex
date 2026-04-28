@@ -17,12 +17,13 @@
 \begin{axis}[
     width=12cm,
     height=7cm,
-    xmin=0, xmax=5000,
-    ymin=0, ymax=0.5,
+    xmin=0, xmax=2050,
+    ymin=0, ymax=0.65,
     xlabel={Number of probes},
     ylabel={Operator-norm error},
-    xtick={0,1000,2000,3000,4000,5000},
-    xticklabels={0,{1{,}000},{2{,}000},{3{,}000},{4{,}000},{5{,}000}},
+    xtick={0,250,500,750,1000,1250,1500,1750,2000},
+    xticklabels={0,250,500,750,{1{,}000},{1{,}250},{1{,}500},{1{,}750},{2{,}000}},
+    scaled x ticks=false,
     grid=both,
     grid style={dashed, gray!30},
     tick align=outside,
@@ -58,6 +59,19 @@ table[
 
 \addplot[fill=royalblue!22, draw=none, forget plot]
     fill between[of=probeupper and probelower];
+
+% -----------------------------
+% O(m^{-1/2}) reference curve
+% -----------------------------
+\addplot[
+    dashed,
+    thick,
+    color=softred,
+    domain=50:2000,
+    samples=200,
+]
+{2.2/sqrt(x)};
+\addlegendentry{$\mathcal{O}(m^{-1/2})$}
 
 % -----------------------------
 % Mean line with markers + error bars
