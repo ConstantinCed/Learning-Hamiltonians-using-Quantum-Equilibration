@@ -36,8 +36,9 @@
                   legend columns=4},
     title={$H(\varepsilon)=\sum Z_iZ_{i+1}+\varepsilon\sum g_i X_i$,\ $g_i\sim\mathcal{N}(0,1)$,\ $30$ samples per $\varepsilon\neq 0$},
     title style={font=\small},
-    scaled y ticks=base 10:5,
-    ytick scale label code/.code={\pgfmathprintnumber{#1}\,$\times 10^{-5}$},
+    ylabel near ticks,
+    yticklabel style={/pgf/number format/.cd, fixed, precision=6},
+    scaled y ticks=false,
 ]
 
 \addplot+[mark=square*, mark size=1.4pt, color=c20, thick]
