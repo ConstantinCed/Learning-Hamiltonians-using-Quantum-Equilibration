@@ -93,7 +93,7 @@ if __name__ == "__main__":
     seed_inst = 123
 
     rng_t = np.random.default_rng(seed_inst + 7)
-    t = float(rng_t.uniform(1.0, 8.0))
+    t = float(rng_t.uniform(1000.0, 2000.0))
 
     n_probes = 1000
     shots = 50_000
