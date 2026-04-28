@@ -1,0 +1,65 @@
+\documentclass[tikz,border=4pt]{standalone}
+
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{amsmath,amssymb}
+\pgfplotsset{compat=1.18}
+
+\begin{document}
+
+\begin{tikzpicture}
+\pgfplotstableread[col sep=comma]{tfim_data_unnormalized_gaussian.csv}\datatable
+
+\begin{loglogaxis}[
+    width=0.92\linewidth,
+    height=0.52\linewidth,
+    xlabel={System size $n$ (qubits)},
+    ylabel={$\displaystyle \inf_{A\perp H}\frac{1}{d}\|[A,H]\|_F^2$},
+    xmin=4,
+    xmax=200,
+    tick align=outside,
+    tick style={black},
+    label style={font=\small},
+    tick label style={font=\small},
+    legend style={
+        at={(0.97,0.97)},
+        anchor=north east,
+        draw=none,
+        fill=none,
+        font=\scriptsize
+    }
+]
+
+\addplot[
+    only marks,
+    mark=*,
+    mark size=0.8pt,
+    color=blue,
+    error bars/.cd,
+    y dir=both,
+    y explicit,
+    error bar style={line width=0.6pt},
+]
+table[
+    x=n,
+    y=mean,
+    y error=sem
+] {\datatable};
+
+\addplot[
+    domain=4:200,
+    samples=400,
+    thick,
+    red
+]
+{100000*(2*x-1)^(-7)*(ln(2*x-1))^(-1)};
+
+\legend{
+TFIM numerics mean $\pm$ SEM,
+Our scaling $n^{-7}\log^{-1}(n)$
+}
+
+\end{loglogaxis}
+\end{tikzpicture}
+
+\end{document}

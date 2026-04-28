@@ -1,0 +1,87 @@
+\documentclass[border=4pt]{standalone}
+
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{amsmath,amssymb}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{fillbetween}
+
+\definecolor{royalblue}{HTML}{1f6fb8}
+
+\begin{document}
+
+\pgfplotstableread[col sep=comma]{tfim_shot_sweep.csv}\shotdata
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=12cm,
+    height=7cm,
+    xmin=0, xmax=50000,
+    ymin=0, ymax=2.6,
+    xlabel={Number of shots},
+    ylabel={Operator-norm error},
+    xtick={0,10000,20000,30000,40000,50000},
+    xticklabels={0,10k,20k,30k,40k,50k},
+    scaled x ticks=false,
+    grid=both,
+    grid style={dashed, gray!30},
+    tick align=outside,
+    tick style={black},
+    label style={font=\small},
+    tick label style={font=\small},
+    legend style={
+        at={(0.98,0.98)},
+        anchor=north east,
+        draw=black!50,
+        fill=white,
+        font=\small,
+    },
+    legend cell align=left,
+]
+
+% -----------------------------
+% Shaded +/- sigma band
+% -----------------------------
+\addplot[name path=shotupper, draw=none, forget plot]
+table[
+    x=param,
+    y expr=\thisrow{mean}+\thisrow{std},
+    restrict expr to domain={mod(\coordindex,2)}{0:0},
+]{\shotdata};
+
+\addplot[name path=shotlower, draw=none, forget plot]
+table[
+    x=param,
+    y expr={max(\thisrow{mean}-\thisrow{std},0)},
+    restrict expr to domain={mod(\coordindex,2)}{0:0},
+]{\shotdata};
+
+\addplot[fill=royalblue!22, draw=none, forget plot]
+    fill between[of=shotupper and shotlower];
+
+% -----------------------------
+% Mean line with markers + error bars
+% -----------------------------
+\addplot+[
+    thick,
+    color=royalblue,
+    mark=*,
+    mark size=1.6pt,
+    mark options={fill=royalblue, draw=royalblue},
+    error bars/.cd,
+        y dir=both, y explicit,
+        error bar style={royalblue, thin},
+        error mark options={rotate=90, mark size=2pt, royalblue},
+]
+table[
+    x=param,
+    y=mean,
+    y error=std,
+    restrict expr to domain={mod(\coordindex,2)}{0:0},
+]{\shotdata};
+\addlegendentry{Mean $\pm\sigma$}
+
+\end{axis}
+\end{tikzpicture}
+
+\end{document}

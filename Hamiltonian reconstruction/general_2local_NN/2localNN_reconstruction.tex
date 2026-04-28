@@ -1,0 +1,192 @@
+% --------------------------------------------------------------------
+% General nearest-neighbor 2-local reconstruction figure
+% Requires: general_2local_nn_n10_reconstruction.csv
+% --------------------------------------------------------------------
+\documentclass[border=4pt]{standalone}
+
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{amsmath,amssymb}
+\usepackage{varwidth}
+\usepackage{caption}
+\pgfplotsset{compat=1.18}
+
+% Colors used by the reconstruction figures.
+\definecolor{cX}{HTML}{1f77b4}
+\definecolor{cY}{HTML}{2ca02c}
+\definecolor{cZ}{HTML}{d62728}
+\definecolor{cO}{HTML}{ff7f0e}
+\definecolor{cOrange}{HTML}{ff7f0e}
+\definecolor{cPurple}{HTML}{9467bd}
+\definecolor{cPink}{HTML}{e377c2}
+\definecolor{cCyan}{HTML}{17becf}
+
+% Styles used by the reconstruction figures.
+\pgfplotsset{
+    identity/.style={dashed, gray, line width=0.7pt},
+    recon scatter/.style={only marks, mark size=1.5pt},
+    residual scatter/.style={only marks, mark size=1.2pt},
+}
+
+\standaloneenv{minipage}
+
+\begin{document}
+
+\pgfplotstableread[col sep=comma]{general_2local_nn_n10_reconstruction.csv}\generaldata
+
+\begin{varwidth}{17cm}
+\centering
+
+\begin{tikzpicture}
+
+\begin{axis}[
+    name=generaltop,
+    width=0.58\textwidth,
+    height=0.43\textwidth,
+    xmin=-0.31, xmax=0.31,
+    ymin=-0.31, ymax=0.31,
+    axis equal image,
+    xlabel={True coefficient $h_\alpha$},
+    ylabel={Reconstructed coefficient $\widehat h_\alpha$},
+    legend pos=north west,
+]
+    \addplot[identity] coordinates {(-0.31,-0.31) (0.31,0.31)};
+    \addlegendentry{Identity}
+
+    % CSV ordering on each bond:
+    % XX, XY, XZ, YX, YY, YZ, ZX, ZY, ZZ.
+
+    \addplot[
+        recon scatter,
+        mark=*,
+        color=cX,
+    ]
+    table[
+        x=true_h,
+        y=noisy_h,
+        restrict expr to domain={mod(\coordindex,9)}{0:0},
+    ]{\generaldata};
+
+    \addplot[
+        recon scatter,
+        mark=square*,
+        color=cOrange,
+    ]
+    table[
+        x=true_h,
+        y=noisy_h,
+        restrict expr to domain={mod(\coordindex,9)}{1:1},
+    ]{\generaldata};
+
+    \addplot[
+        recon scatter,
+        mark=triangle*,
+        color=cPurple,
+    ]
+    table[
+        x=true_h,
+        y=noisy_h,
+        restrict expr to domain={mod(\coordindex,9)}{2:2},
+    ]{\generaldata};
+
+    \addplot[
+        recon scatter,
+        mark=diamond*,
+        color=cPink,
+    ]
+    table[
+        x=true_h,
+        y=noisy_h,
+        restrict expr to domain={mod(\coordindex,9)}{3:3},
+    ]{\generaldata};
+
+    \addplot[
+        recon scatter,
+        mark=pentagon*,
+        color=cY,
+    ]
+    table[
+        x=true_h,
+        y=noisy_h,
+        restrict expr to domain={mod(\coordindex,9)}{4:4},
+    ]{\generaldata};
+
+    \addplot[
+        recon scatter,
+        mark=otimes*,
+        color=cCyan,
+    ]
+    table[
+        x=true_h,
+        y=noisy_h,
+        restrict expr to domain={mod(\coordindex,9)}{5:5},
+    ]{\generaldata};
+
+    \addplot[
+        recon scatter,
+        mark=oplus*,
+        color=black!70,
+    ]
+    table[
+        x=true_h,
+        y=noisy_h,
+        restrict expr to domain={mod(\coordindex,9)}{6:6},
+    ]{\generaldata};
+
+    \addplot[
+        recon scatter,
+        mark=star,
+        color=cX!70!black,
+    ]
+    table[
+        x=true_h,
+        y=noisy_h,
+        restrict expr to domain={mod(\coordindex,9)}{7:7},
+    ]{\generaldata};
+
+    \addplot[
+        recon scatter,
+        mark=asterisk,
+        color=cZ,
+    ]
+    table[
+        x=true_h,
+        y=noisy_h,
+        restrict expr to domain={mod(\coordindex,9)}{8:8},
+    ]{\generaldata};
+
+\end{axis}
+
+\begin{axis}[
+    at={(generaltop.south)},
+    anchor=north,
+    yshift=-1.5cm,
+    width=0.58\textwidth,
+    height=0.21\textwidth,
+    xmin=-1, xmax=81,
+    ymin=-0.005, ymax=0.005,
+    xlabel={Operator index $\alpha$},
+    ylabel={Error $h_\alpha-\widehat h_\alpha$},
+    xtick={0,9,18,27,36,45,54,63,72,80},
+    scaled y ticks=false,
+    yticklabel style={/pgf/number format/fixed, /pgf/number format/precision=3},
+]
+    \addplot[black!40, line width=0.45pt] coordinates {(-1,0) (81,0)};
+
+    \addplot[
+        residual scatter,
+        mark=*,
+        color=cO,
+    ]
+    table[
+        x=idx,
+        y=err_noisy,
+    ]{\generaldata};
+
+\end{axis}
+
+\end{tikzpicture}
+
+\end{varwidth}
+
+\end{document}

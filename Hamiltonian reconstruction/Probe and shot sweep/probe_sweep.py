@@ -138,8 +138,8 @@ if __name__ == "__main__":
     t = float(rng_t.uniform(1.0, 8.0))
     print(f"[t] t = {t:.4f}")
 
-    fixed_shots = 50_000
-    probe_grid = list(range(50, 5001, 250))
+    fixed_shots = 20_000
+    probe_grid = [int(x) for x in np.linspace(50, 2000, 20)]
     n_trials = 32
 
     print(f"[sweep] {len(probe_grid)} probe values in "

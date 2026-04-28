@@ -1,0 +1,71 @@
+\documentclass[border=4pt]{standalone}
+
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{amsmath,amssymb}
+\pgfplotsset{compat=1.18}
+
+% Distinct color per system size n.
+\definecolor{cn6}{HTML}{440154}
+\definecolor{cn7}{HTML}{3b528b}
+\definecolor{cn8}{HTML}{21918c}
+\definecolor{cn9}{HTML}{5ec962}
+\definecolor{cn10}{HTML}{b8860b}
+\definecolor{cn11}{HTML}{e2711d}
+\definecolor{cn12}{HTML}{b2182b}
+
+\begin{document}
+
+\pgfplotstableread[col sep=comma]{autocorrelation.csv}\autodata
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=12cm,
+    height=7.5cm,
+    xmin=0, xmax=400,
+    ymin=-0.05, ymax=1.05,
+    xlabel={$t$},
+    ylabel={Autocorrelation},
+    xtick={0,50,100,150,200,250,300,350,400},
+    ytick={0,0.25,0.5,0.75,1},
+    grid=both,
+    grid style={dashed, gray!30},
+    tick align=outside,
+    tick style={black},
+    label style={font=\small},
+    tick label style={font=\footnotesize},
+    legend style={
+        at={(1.02,1)},
+        anchor=north west,
+        draw=none,
+        fill=none,
+        font=\footnotesize,
+    },
+    legend cell align=left,
+]
+
+\addplot[only marks, mark=*, mark size=1.0pt, color=cn6, mark options={fill=cn6, draw=cn6}]  table[x=t, y=mean, restrict expr to domain={\thisrow{n}}{6:6}]{\autodata};
+\addlegendentry{$n=6$}
+
+\addplot[only marks, mark=*, mark size=1.0pt, color=cn7, mark options={fill=cn7, draw=cn7}]  table[x=t, y=mean, restrict expr to domain={\thisrow{n}}{7:7}]{\autodata};
+\addlegendentry{$n=7$}
+
+\addplot[only marks, mark=*, mark size=1.0pt, color=cn8, mark options={fill=cn8, draw=cn8}]  table[x=t, y=mean, restrict expr to domain={\thisrow{n}}{8:8}]{\autodata};
+\addlegendentry{$n=8$}
+
+\addplot[only marks, mark=*, mark size=1.0pt, color=cn9, mark options={fill=cn9, draw=cn9}]  table[x=t, y=mean, restrict expr to domain={\thisrow{n}}{9:9}]{\autodata};
+\addlegendentry{$n=9$}
+
+\addplot[only marks, mark=*, mark size=1.0pt, color=cn10, mark options={fill=cn10, draw=cn10}] table[x=t, y=mean, restrict expr to domain={\thisrow{n}}{10:10}]{\autodata};
+\addlegendentry{$n=10$}
+
+\addplot[only marks, mark=*, mark size=1.0pt, color=cn11, mark options={fill=cn11, draw=cn11}] table[x=t, y=mean, restrict expr to domain={\thisrow{n}}{11:11}]{\autodata};
+\addlegendentry{$n=11$}
+
+\addplot[only marks, mark=*, mark size=1.0pt, color=cn12, mark options={fill=cn12, draw=cn12}] table[x=t, y=mean, restrict expr to domain={\thisrow{n}}{12:12}]{\autodata};
+\addlegendentry{$n=12$}
+
+\end{axis}
+\end{tikzpicture}
+
+\end{document}

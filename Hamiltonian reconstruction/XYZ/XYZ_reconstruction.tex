@@ -1,0 +1,150 @@
+% --------------------------------------------------------------------
+% XYZ reconstruction figure
+% Requires: xyz_n10_reconstruction.csv
+% --------------------------------------------------------------------
+\documentclass[border=4pt]{standalone}
+
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{amsmath,amssymb}
+\usepackage{varwidth}
+\usepackage{caption}
+\pgfplotsset{compat=1.18}
+
+% Colors used by the reconstruction figures.
+\definecolor{cX}{HTML}{1f77b4}
+\definecolor{cY}{HTML}{2ca02c}
+\definecolor{cZ}{HTML}{d62728}
+\definecolor{cO}{HTML}{ff7f0e}
+\definecolor{cOrange}{HTML}{ff7f0e}
+\definecolor{cPurple}{HTML}{9467bd}
+\definecolor{cPink}{HTML}{e377c2}
+\definecolor{cCyan}{HTML}{17becf}
+
+% Styles used by the reconstruction figures.
+\pgfplotsset{
+    identity/.style={dashed, gray, line width=0.7pt},
+    recon scatter/.style={only marks, mark size=1.5pt},
+    residual scatter/.style={only marks, mark size=1.2pt},
+}
+
+\standaloneenv{minipage}
+
+\begin{document}
+
+\pgfplotstableread[col sep=comma]{xyz_n10_reconstruction.csv}\xyzdata
+
+\begin{varwidth}{16cm}
+\centering
+
+\begin{tikzpicture}
+
+\begin{axis}[
+    name=xyztop,
+    width=0.55\textwidth,
+    height=0.42\textwidth,
+    xmin=-0.32, xmax=0.32,
+    ymin=-0.32, ymax=0.32,
+    axis equal image,
+    xlabel={True coefficient $h_\alpha$},
+    ylabel={Reconstructed coefficient $\widehat h_\alpha$},
+    legend pos=north west,
+]
+    \addplot[identity] coordinates {(-0.32,-0.32) (0.32,0.32)};
+    \addlegendentry{Identity}
+
+    % CSV ordering: X_iX_{i+1}, Y_iY_{i+1}, Z_iZ_{i+1}, repeated over bonds.
+    \addplot[
+        recon scatter,
+        mark=*,
+        color=cX,
+    ]
+    table[
+        x=true_h,
+        y=noisy_h,
+        restrict expr to domain={mod(\coordindex,3)}{0:0},
+    ]{\xyzdata};
+    \addlegendentry{$X_iX_{i+1}$ terms}
+
+    \addplot[
+        recon scatter,
+        mark=square*,
+        color=cY,
+    ]
+    table[
+        x=true_h,
+        y=noisy_h,
+        restrict expr to domain={mod(\coordindex,3)}{1:1},
+    ]{\xyzdata};
+    \addlegendentry{$Y_iY_{i+1}$ terms}
+
+    \addplot[
+        recon scatter,
+        mark=triangle*,
+        color=cZ,
+    ]
+    table[
+        x=true_h,
+        y=noisy_h,
+        restrict expr to domain={mod(\coordindex,3)}{2:2},
+    ]{\xyzdata};
+    \addlegendentry{$Z_iZ_{i+1}$ terms}
+
+\end{axis}
+
+\begin{axis}[
+    at={(xyztop.south)},
+    anchor=north,
+    yshift=-1.5cm,
+    width=0.55\textwidth,
+    height=0.22\textwidth,
+    xmin=-0.8, xmax=26.8,
+    ymin=-0.005, ymax=0.005,
+    xlabel={Operator index $\alpha$},
+    ylabel={Error $h_\alpha-\widehat h_\alpha$},
+    xtick={0,3,6,9,12,15,18,21,24,26},
+    scaled y ticks=false,
+    yticklabel style={/pgf/number format/fixed, /pgf/number format/precision=3},
+]
+    \addplot[black!40, line width=0.45pt] coordinates {(-0.8,0) (26.8,0)};
+
+    \addplot[
+        residual scatter,
+        mark=*,
+        color=cX,
+    ]
+    table[
+        x expr=\coordindex,
+        y=err_noisy,
+        restrict expr to domain={mod(\coordindex,3)}{0:0},
+    ]{\xyzdata};
+
+    \addplot[
+        residual scatter,
+        mark=square*,
+        color=cY,
+    ]
+    table[
+        x expr=\coordindex,
+        y=err_noisy,
+        restrict expr to domain={mod(\coordindex,3)}{1:1},
+    ]{\xyzdata};
+
+    \addplot[
+        residual scatter,
+        mark=triangle*,
+        color=cZ,
+    ]
+    table[
+        x expr=\coordindex,
+        y=err_noisy,
+        restrict expr to domain={mod(\coordindex,3)}{2:2},
+    ]{\xyzdata};
+
+\end{axis}
+
+\end{tikzpicture}
+
+\end{varwidth}
+
+\end{document}

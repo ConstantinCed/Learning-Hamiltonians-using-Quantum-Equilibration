@@ -138,8 +138,8 @@ if __name__ == "__main__":
     t = float(rng_t.uniform(1.0, 8.0))
     print(f"[t] t = {t:.4f}")
 
-    fixed_probes = 1000
-    shot_grid = list(range(2000, 50001, 2500))
+    fixed_probes = 2000
+    shot_grid = [int(x) for x in np.linspace(2000, 20000, 20)]
     n_trials = 32
 
     print(f"[sweep] {len(shot_grid)} shot values in "
@@ -147,7 +147,8 @@ if __name__ == "__main__":
           f"fixed probes = {fixed_probes}, n_trials = {n_trials}")
 
     records = shot_sweep(n, t, fixed_probes, shot_grid,
-                         seed_instance=seed_inst, n_trials=n_trials)
+                         seed_instance=seed_inst, n_trials=n_trials,
+                         n_jobs=6)
 
     here = Path(__file__).resolve().parent
     save_csv(records, here / "tfim_shot_sweep.csv")

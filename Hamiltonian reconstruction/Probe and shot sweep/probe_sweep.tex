@@ -1,0 +1,87 @@
+\documentclass[border=4pt]{standalone}
+
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{amsmath,amssymb}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{fillbetween}
+
+\definecolor{royalblue}{HTML}{1f6fb8}
+\definecolor{softred}{HTML}{d65c5c}
+
+\begin{document}
+
+\pgfplotstableread[col sep=comma]{tfim_probe_sweep.csv}\probedata
+
+\begin{tikzpicture}
+\begin{axis}[
+    width=12cm,
+    height=7cm,
+    xmin=0, xmax=5000,
+    ymin=0, ymax=0.5,
+    xlabel={Number of probes},
+    ylabel={Operator-norm error},
+    xtick={0,1000,2000,3000,4000,5000},
+    xticklabels={0,{1{,}000},{2{,}000},{3{,}000},{4{,}000},{5{,}000}},
+    grid=both,
+    grid style={dashed, gray!30},
+    tick align=outside,
+    tick style={black},
+    label style={font=\small},
+    tick label style={font=\small},
+    legend style={
+        at={(0.98,0.98)},
+        anchor=north east,
+        draw=black!50,
+        fill=white,
+        font=\small,
+    },
+    legend cell align=left,
+]
+
+% -----------------------------
+% Shaded +/- sigma band
+% -----------------------------
+\addplot[name path=probeupper, draw=none, forget plot]
+table[
+    x=param,
+    y expr=\thisrow{mean}+\thisrow{std},
+    restrict expr to domain={mod(\coordindex,2)}{0:0},
+]{\probedata};
+
+\addplot[name path=probelower, draw=none, forget plot]
+table[
+    x=param,
+    y expr={max(\thisrow{mean}-\thisrow{std},0)},
+    restrict expr to domain={mod(\coordindex,2)}{0:0},
+]{\probedata};
+
+\addplot[fill=royalblue!22, draw=none, forget plot]
+    fill between[of=probeupper and probelower];
+
+% -----------------------------
+% Mean line with markers + error bars
+% -----------------------------
+\addplot+[
+    thick,
+    color=royalblue,
+    mark=*,
+    mark size=1.6pt,
+    mark options={fill=royalblue, draw=royalblue},
+    error bars/.cd,
+        y dir=both, y explicit,
+        error bar style={royalblue, thin},
+        error mark options={rotate=90, mark size=2pt, royalblue},
+]
+table[
+    x=param,
+    y=mean,
+    y error=std,
+    restrict expr to domain={mod(\coordindex,2)}{0:0},
+]{\probedata};
+\addlegendentry{Mean $\pm\sigma$}
+
+\end{axis}
+\end{tikzpicture}
+
+\end{document}
