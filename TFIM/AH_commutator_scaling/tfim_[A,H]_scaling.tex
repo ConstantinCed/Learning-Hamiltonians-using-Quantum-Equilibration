@@ -112,12 +112,14 @@
 \pgfmathprintnumberto[fixed,precision=2]{\fitBeta}{\fitBetaPrint}
 
 \begin{loglogaxis}[
-    width=0.69\linewidth,
-    height=0.52\linewidth,
+    width=9cm,
+    height=7cm,
     xlabel={System size $n$ (qubits)},
     ylabel={$\displaystyle \inf_{A\perp H}\frac{1}{d}\|[A,H]\|_F^2$},
     xmin=4,
     xmax=200,
+    grid=both,
+    grid style={dashed, gray!30},
     tick align=outside,
     tick style={black},
     label style={font=\small},
