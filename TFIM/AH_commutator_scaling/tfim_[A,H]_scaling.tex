@@ -111,7 +111,7 @@
 \pgfmathprintnumberto[fixed,precision=2]{\fitAlpha}{\fitAlphaPrint}
 \pgfmathprintnumberto[fixed,precision=2]{\fitBeta}{\fitBetaPrint}
 
-\begin{loglogaxis}[
+\begin{axis}[ymode=log,
     width=9cm,
     height=7cm,
     xlabel={System size $n$ (qubits)},
@@ -163,7 +163,7 @@ TFIM numerics mean $\pm$ SEM,
 Scaling fit: $\, n^{\fitAlphaPrint} \log^{\fitBetaPrint}n$
 }
 
-\end{loglogaxis}
+\end{axis}
 \end{tikzpicture}
 
 \end{document}
