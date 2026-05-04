@@ -5,7 +5,7 @@ nearest-neighbor 2-local Hamiltonians.
 
 Computes and plots the weak self-correlation (autocorrelation) bound
 
-  M_self(t) = sup_{|x|=1, x real} |x^T K(t) x|
+  M_self(t) = sup_{|x|=1, x real} x^T K(t) x
 
 where K_{ab}(t) = (1/d) tr( E_a(t) E_b ) and {E_a} is an HS-orthonormal
 basis of V = W \cap H^perp. W is the space of 1-local + nearest-neighbor
@@ -218,9 +218,9 @@ def compute_all_K(descriptors, V_coeffs, eigvals, U, t_array, d):
 
 def compute_M_self(K):
     """
-    M_self(t) = sup_{|x|=1, x real} |x^T K(t) x|.
+    M_self(t) = sup_{|x|=1, x real} x^T K(t) x  (signed, no absolute value).
 
-    Equals spectral radius of Re(K_S) where K_S = (K + K^T)/2,
+    Equals the largest eigenvalue of Re(K_S) where K_S = (K + K^T)/2,
     since Im(K_S) = 0 to machine precision for this Hamiltonian class.
     """
     K_S = (K + K.T) / 2
@@ -232,7 +232,7 @@ def compute_M_self(K):
 
     if im_norm < 1e-10 * max(re_norm, 1e-15):
         eigvals_re = np.linalg.eigvalsh(K_S_re)
-        return max(abs(eigvals_re[0]), abs(eigvals_re[-1]))
+        return eigvals_re[-1]
 
     import warnings
     warnings.warn(
@@ -240,7 +240,7 @@ def compute_M_self(K):
         f"Using eigenvalue fallback."
     )
     eigvals_re = np.linalg.eigvalsh(K_S_re)
-    return max(abs(eigvals_re[0]), abs(eigvals_re[-1]))
+    return eigvals_re[-1]
 
 
 def compute_single_realization(n, t_array, seed):
