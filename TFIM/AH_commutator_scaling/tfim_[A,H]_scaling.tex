@@ -8,10 +8,111 @@
 \begin{document}
 
 \begin{tikzpicture}
+
+% If your file is actually named with "(1)", change this line accordingly.
 \pgfplotstableread[col sep=comma]{tfim_data_unnormalized_gaussian.csv}\datatable
 
+% ------------------------------------------------------------
+% Fit y = C n^alpha (log n)^beta
+%
+% Linearized form:
+%   log(y) = log(C) + alpha log(n) + beta log(log(n))
+%
+% We skip rows with y <= 0 or n <= 1 to avoid log issues.
+% ------------------------------------------------------------
+
+\pgfplotstablegetrowsof{\datatable}
+\pgfmathtruncatemacro{\TotalRows}{\pgfplotsretval}
+\pgfmathtruncatemacro{\LastRow}{\TotalRows-1}
+
+\pgfmathsetmacro{\Sone}{0}
+\pgfmathsetmacro{\Sx}{0}
+\pgfmathsetmacro{\Sz}{0}
+\pgfmathsetmacro{\Sy}{0}
+\pgfmathsetmacro{\Sxx}{0}
+\pgfmathsetmacro{\Szz}{0}
+\pgfmathsetmacro{\Sxz}{0}
+\pgfmathsetmacro{\Sxy}{0}
+\pgfmathsetmacro{\Szy}{0}
+
+\pgfplotsforeachungrouped \i in {0,...,\LastRow} {%
+    \pgfplotstablegetelem{\i}{n}\of{\datatable}
+    \pgfmathsetmacro{\xn}{\pgfplotsretval}
+
+    \pgfplotstablegetelem{\i}{mean}\of{\datatable}
+    \pgfmathsetmacro{\yn}{\pgfplotsretval}
+
+    \pgfmathparse{(\xn > 1) && (\yn > 0)}
+    \ifnum\pgfmathresult=1
+        \pgfmathsetmacro{\lx}{ln(\xn)}
+        \pgfmathsetmacro{\lz}{ln(\lx)}
+        \pgfmathsetmacro{\ly}{ln(\yn)}
+
+        \pgfmathsetmacro{\SoneNew}{\Sone + 1}
+        \pgfmathsetmacro{\SxNew}{\Sx + \lx}
+        \pgfmathsetmacro{\SzNew}{\Sz + \lz}
+        \pgfmathsetmacro{\SyNew}{\Sy + \ly}
+        \pgfmathsetmacro{\SxxNew}{\Sxx + \lx*\lx}
+        \pgfmathsetmacro{\SzzNew}{\Szz + \lz*\lz}
+        \pgfmathsetmacro{\SxzNew}{\Sxz + \lx*\lz}
+        \pgfmathsetmacro{\SxyNew}{\Sxy + \lx*\ly}
+        \pgfmathsetmacro{\SzyNew}{\Szy + \lz*\ly}
+
+        \xdef\Sone{\SoneNew}
+        \xdef\Sx{\SxNew}
+        \xdef\Sz{\SzNew}
+        \xdef\Sy{\SyNew}
+        \xdef\Sxx{\SxxNew}
+        \xdef\Szz{\SzzNew}
+        \xdef\Sxz{\SxzNew}
+        \xdef\Sxy{\SxyNew}
+        \xdef\Szy{\SzyNew}
+    \fi
+}
+
+% Solve the 3x3 normal equations for
+% [a0, a1, a2] = [log(C), alpha, beta]
+%
+% Matrix:
+% [Sone  Sx   Sz ] [a0]   [Sy ]
+% [Sx    Sxx  Sxz] [a1] = [Sxy]
+% [Sz    Sxz  Szz] [a2]   [Szy]
+
+\pgfmathsetmacro{\DetA}{
+    \Sone*(\Sxx*\Szz - \Sxz*\Sxz)
+    - \Sx*(\Sx*\Szz - \Sxz*\Sz)
+    + \Sz*(\Sx*\Sxz - \Sxx*\Sz)
+}
+
+\pgfmathsetmacro{\DetAZero}{
+    \Sy*(\Sxx*\Szz - \Sxz*\Sxz)
+    - \Sx*(\Sxy*\Szz - \Sxz*\Szy)
+    + \Sz*(\Sxy*\Sxz - \Sxx*\Szy)
+}
+
+\pgfmathsetmacro{\DetAOne}{
+    \Sone*(\Sxy*\Szz - \Sxz*\Szy)
+    - \Sy*(\Sx*\Szz - \Sxz*\Sz)
+    + \Sz*(\Sx*\Szy - \Sxy*\Sz)
+}
+
+\pgfmathsetmacro{\DetATwo}{
+    \Sone*(\Sxx*\Szy - \Sxy*\Sxz)
+    - \Sx*(\Sx*\Szy - \Sxy*\Sz)
+    + \Sy*(\Sx*\Sxz - \Sxx*\Sz)
+}
+
+\pgfmathsetmacro{\fitLogC}{\DetAZero/\DetA}
+\pgfmathsetmacro{\fitAlpha}{\DetAOne/\DetA}
+\pgfmathsetmacro{\fitBeta}{\DetATwo/\DetA}
+\pgfmathsetmacro{\fitC}{exp(\fitLogC)}
+
+\pgfmathprintnumberto[fixed,precision=2]{\fitC}{\fitCPrint}
+\pgfmathprintnumberto[fixed,precision=2]{\fitAlpha}{\fitAlphaPrint}
+\pgfmathprintnumberto[fixed,precision=2]{\fitBeta}{\fitBetaPrint}
+
 \begin{loglogaxis}[
-    width=0.92\linewidth,
+    width=0.69\linewidth,
     height=0.52\linewidth,
     xlabel={System size $n$ (qubits)},
     ylabel={$\displaystyle \inf_{A\perp H}\frac{1}{d}\|[A,H]\|_F^2$},
@@ -47,16 +148,17 @@ table[
 ] {\datatable};
 
 \addplot[
-    domain=4:200,
-    samples=400,
+    red,
     thick,
-    red
+    dashed,
+    domain=4:200,
+    samples=300,
 ]
-{100000*(2*x-1)^(-7)*(ln(2*x-1))^(-1)};
+{\fitC * x^(\fitAlpha) * (ln(x))^(\fitBeta)};
 
 \legend{
 TFIM numerics mean $\pm$ SEM,
-Our scaling $n^{-7}\log^{-1}(n)$
+Scaling fit: $\, n^{\fitAlphaPrint} \log^{\fitBetaPrint}n$
 }
 
 \end{loglogaxis}
