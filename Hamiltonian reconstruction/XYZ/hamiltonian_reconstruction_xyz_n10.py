@@ -1,11 +1,4 @@
-"""XYZ (Heisenberg) Hamiltonian reconstruction at n=10.
-
-Family:    H = sum_{i, P in {X,Y,Z}} c_{i,P} P_i P_{i+1}    (|V| = 3(n-1))
-Sampling:  c_{i,P} ~ N(0, 1)  (H is NOT normalized)
-Shadow:    3 measurement settings (global X, Y, Z bases; one third of the
-           shots each).
-"""
-import os
+"""Run n=10 XYZ Hamiltonian reconstruction with global X/Y/Z shadow bases."""
 import sys
 from pathlib import Path
 
@@ -15,9 +8,6 @@ import numpy as np
 import recon_common as rc
 
 
-# ──────────────────────────────────────────────────
-#  Model definition
-# ──────────────────────────────────────────────────
 def family_labels(n):
     labels, names = [], []
     for i in range(n - 1):
@@ -45,7 +35,7 @@ def estimate_shadow(psi_t, n, n_shots, rng):
     rem = n_shots - 3 * base
     counts = [base + (1 if k < rem else 0) for k in range(3)]
 
-    for k in range(3):  # 0=X, 1=Y, 2=Z
+    for k in range(3):
         U_rot = rc.rotation_unitary(tuple([k] * n))
         phi = U_rot @ psi_t
         prob = phi.real ** 2 + phi.imag ** 2
@@ -60,9 +50,6 @@ def estimate_shadow(psi_t, n, n_shots, rng):
     return est
 
 
-# ──────────────────────────────────────────────────
-#  Public API
-# ──────────────────────────────────────────────────
 def run_trial(n, t, n_probes, shots_per_probe,
               seed_instance=0, seed_probes=1, seed_shadows=2,
               n_jobs=rc.N_JOBS):
@@ -76,9 +63,6 @@ def run_trial(n, t, n_probes, shots_per_probe,
     )
 
 
-# ──────────────────────────────────────────────────
-#  Main
-# ──────────────────────────────────────────────────
 if __name__ == "__main__":
     n = 10
     seed_inst = 123

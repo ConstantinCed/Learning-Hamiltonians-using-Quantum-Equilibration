@@ -1,9 +1,4 @@
-"""Pretty-print the consolidated witness-Hamiltonian coverage.
-
-Reads every ``<family>/<lattice>.json`` produced by ``run_witness.py``
-and prints, per (lattice, family), the certified (L, k, R) cells plus a
-clean ``(k, R)`` coverage summary for the generic ``dense`` family.
-"""
+"""Print consolidated witness-Hamiltonian coverage tables."""
 import json
 import os
 from collections import defaultdict
@@ -49,7 +44,6 @@ for (gk, fam), rows in sorted(groups.items()):
         Rstr = f"R={Rg}" if Rg is not None else "R=- "
         print(f"   L={ga}  {kstr}  {Rstr}  Rpatch={Rp}   {flag:5s}   [{fn}]")
 
-# Build clean (k, R) coverage table for the "dense" family
 print("\n" + "=" * 72)
 print("CLEAN DENSE-FAMILY COVERAGE (k vs R, by lattice)")
 print("=" * 72)

@@ -1,23 +1,4 @@
-"""Shared utilities for Hamiltonian reconstruction (TFIM / XYZ / 2-local NN).
-
-Provides:
-  - Pauli algebra helpers (single- and two-site labels, kron, rotation gates)
-  - Pauli-string descriptors for O(d) matvec  (P|psi>) without storing P
-  - Product-state probe sampling
-  - Generic exact input/output expectation routines
-  - Generic Hamiltonian builder (NOT HS-normalized; coeffs left raw)
-  - Feature matrix builders (exact & shadow), reconstruction, error metrics
-  - A generic run_trial that takes model-specific callbacks
-
-Each model script (TFIM/XYZ/2-local-NN) only needs to provide:
-  - family_labels(n)        -> (labels, names)
-  - random_instance(n, rng) -> (labels, names, coeffs)
-  - estimate_shadow(psi_t, n, n_shots, rng) -> estimated expectations
-        aligned with family_labels(n).
-
-The recovered direction `true_h = coeffs / ||coeffs||_2` is the unit vector
-the SVD null-space reconstruction can recover (H itself is left UNNORMALIZED).
-"""
+"""Shared Pauli, probe, and reconstruction utilities for the model scripts."""
 import os
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
@@ -38,9 +19,6 @@ except ImportError:
 
 N_JOBS = cpu_count()
 
-# ──────────────────────────────────────────────────
-#  Pauli algebra
-# ──────────────────────────────────────────────────
 I2 = np.array([[1, 0], [0, 1]], dtype=complex)
 X2 = np.array([[0, 1], [1, 0]], dtype=complex)
 Y2 = np.array([[0, -1j], [1j, 0]], dtype=complex)
@@ -49,7 +27,6 @@ PAULI_1Q = {"I": I2, "X": X2, "Y": Y2, "Z": Z2}
 
 Hgate = np.array([[1, 1], [1, -1]], dtype=complex) / np.sqrt(2)
 Sdg   = np.array([[1, 0], [0, -1j]], dtype=complex)
-# Rotation that diagonalises X, Y, Z respectively (0->X, 1->Y, 2->Z).
 BASIS_ROT_LIST = [Hgate, Hgate @ Sdg, I2]
 
 PAULI_TO_BASIS = {"X": 0, "Y": 1, "Z": 2}
@@ -83,9 +60,6 @@ def two_site_label(n, i, j, p, q):
     return "".join(s)
 
 
-# ──────────────────────────────────────────────────
-#  Pauli descriptor: P|s> = phases[s] |s XOR flip>   (O(d) memory & matvec)
-# ──────────────────────────────────────────────────
 def pauli_descriptor(n, label):
     d = 2 ** n
     flip = 0
@@ -109,17 +83,12 @@ def pauli_descriptor(n, label):
 
 def pauli_expectation(psi, descriptor):
     flip, phases = descriptor
-    # <psi| P |psi> = sum_s conj(psi[s XOR flip]) * phases[s] * psi[s]
     idx = np.arange(len(psi)) ^ flip
     return float(np.real(np.sum(np.conj(psi[idx]) * phases * psi)))
 
 
-# ──────────────────────────────────────────────────
-#  Hamiltonian (unnormalized)
-# ──────────────────────────────────────────────────
 def build_hamiltonian(labels, coeffs):
-    """Return (H, true_h, descriptors) with H = sum_i c_i P_i (raw, unnormalized)
-    and true_h = coeffs / ||coeffs||_2 (unit-norm direction)."""
+    """Return the raw Hamiltonian, unit coefficient direction, and descriptors."""
     n = len(labels[0])
     d = 2 ** n
     descriptors = [pauli_descriptor(n, lbl) for lbl in labels]
@@ -131,9 +100,6 @@ def build_hamiltonian(labels, coeffs):
     return H, true_h, descriptors
 
 
-# ──────────────────────────────────────────────────
-#  Product-state probes
-# ──────────────────────────────────────────────────
 ket0   = np.array([1, 0], dtype=complex)
 ket1   = np.array([0, 1], dtype=complex)
 ketp   = np.array([1, 1], dtype=complex) / np.sqrt(2)
@@ -141,7 +107,6 @@ ketm   = np.array([1, -1], dtype=complex) / np.sqrt(2)
 kety_p = np.array([1, 1j], dtype=complex) / np.sqrt(2)
 kety_m = np.array([1, -1j], dtype=complex) / np.sqrt(2)
 
-# (basis_index, sign, ket)  with basis_index 0=X, 1=Y, 2=Z
 PROBE_OPTIONS = [
     (0, +1., ketp),  (0, -1., ketm),
     (1, +1., kety_p), (1, -1., kety_m),
@@ -171,13 +136,8 @@ def sample_product_probes(n, n_probes, rng):
     return probes
 
 
-# ──────────────────────────────────────────────────
-#  Generic exact expectations
-# ──────────────────────────────────────────────────
 def exact_input_expectations(labels, probe):
-    """For a product-state probe, <psi|P|psi> for each Pauli string label.
-    Nonzero only when every non-I site of the label matches the probe's
-    eigenbasis on that qubit; value is the product of the corresponding signs."""
+    """Return product-state expectations for each Pauli label."""
     basis = probe["basis"]
     sign = probe["sign"]
     out = np.zeros(len(labels))
@@ -199,9 +159,6 @@ def exact_output_expectations(psi_t, descriptors):
     return np.array([pauli_expectation(psi_t, D) for D in descriptors])
 
 
-# ──────────────────────────────────────────────────
-#  Feature matrix builders
-# ──────────────────────────────────────────────────
 def _exact_row(probe, U, labels, descriptors):
     psi_t = U @ probe["psi"]
     ein = exact_input_expectations(labels, probe)
@@ -236,9 +193,6 @@ def build_feature_matrix_shadow(U, probes, labels, shots_per_probe, rng,
     return np.array(rows, dtype=float)
 
 
-# ──────────────────────────────────────────────────
-#  Reconstruction & error metrics
-# ──────────────────────────────────────────────────
 def reconstruct(X, true_h):
     _, svals, Vh = np.linalg.svd(X, full_matrices=False)
     h = Vh[-1]
@@ -273,9 +227,6 @@ def max_coeff_error(h_est, true_h):
     return float(np.max(np.abs(h_est - true_h)))
 
 
-# ──────────────────────────────────────────────────
-#  Trial runner
-# ──────────────────────────────────────────────────
 def run_trial(n, t, random_instance_fn, estimate_shadow_fn,
               n_probes, shots_per_probe,
               seed_instance=0, seed_probes=1, seed_shadows=2, n_jobs=N_JOBS):
@@ -329,9 +280,6 @@ def run_trial(n, t, random_instance_fn, estimate_shadow_fn,
     }
 
 
-# ──────────────────────────────────────────────────
-#  Output helpers
-# ──────────────────────────────────────────────────
 def print_summary(res, shots_per_probe=None):
     se = res["exact"]["svals"]
     ge = res["gap_exact"]

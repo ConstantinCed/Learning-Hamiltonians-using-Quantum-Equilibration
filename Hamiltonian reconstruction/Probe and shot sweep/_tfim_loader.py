@@ -1,5 +1,4 @@
-"""Load the TFIM n=10 reconstruction module despite the space in the parent
-folder name (``Hamiltonian reconstruction``)."""
+"""Load the TFIM reconstruction script from the neighboring directory."""
 from importlib import util as _importlib_util
 from pathlib import Path as _Path
 

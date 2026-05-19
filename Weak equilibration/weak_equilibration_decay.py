@@ -1,27 +1,9 @@
 #!/usr/bin/env python3
-"""
-Weak equilibration decay: self-contained numerics for random dense
-nearest-neighbor 2-local Hamiltonians.
+"""Compute weak-equilibration autocorrelation decay for random 2-local chains."""
 
-Computes and plots the weak self-correlation (autocorrelation) bound
-
-  M_self(t) = sup_{|x|=1, x real} x^T K(t) x
-
-where K_{ab}(t) = (1/d) tr( E_a(t) E_b ) and {E_a} is an HS-orthonormal
-basis of V = W \cap H^perp. W is the space of 1-local + nearest-neighbor
-2-local Hermitian Pauli strings on n qubits.
-
-This single script is fully self-contained: no external module
-dependencies beyond numpy, scipy, matplotlib, pandas. Outputs land in
-the script's own folder.
-
-Usage:
-    python weak_equilibration_decay.py
-"""
-
-# CRITICAL: prevent BLAS thread oversubscription when using multiprocessing.
-# Must be set BEFORE importing numpy.
 import os
+
+# Keep BLAS single-threaded before importing NumPy.
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
@@ -38,9 +20,6 @@ from itertools import product as iprod
 from scipy.linalg import eigh
 from multiprocessing import Pool
 
-# ======================================================================
-# Configuration
-# ======================================================================
 N_VALUES     = [6, 7, 8, 9, 10, 11, 12]
 REALIZATIONS = {6: 30, 7: 30, 8: 20, 9: 15, 10: 10, 11: 5, 12: 3}
 WORKERS      = {6: 14, 7: 14, 8: 12, 9: 8,  10: 4,  11: 2, 12: 1}
@@ -50,19 +29,9 @@ DT        = 2.0
 BASE_SEED = 20240101
 OUTPUT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# ======================================================================
-# Pauli string descriptors (lightweight, no full d x d matrices)
-# ======================================================================
 
 def _make_pauli_descriptor(n, site_pauli_pairs):
-    """
-    Create a Pauli string descriptor: (flip_mask, phases).
-
-    For a Pauli string P, acting on basis state |s>:
-      P|s> = phases[s] * |s XOR flip_mask>
-
-    This allows O(d) application without building the d x d matrix.
-    """
+    """Encode a Pauli string as a flip mask and phase vector."""
     d = 2 ** n
     flip_mask = 0
     phases = np.ones(d, dtype=np.complex128)
@@ -79,27 +48,19 @@ def _make_pauli_descriptor(n, site_pauli_pairs):
             flip_mask ^= bit_mask
             phases *= np.where(bit_vals == 0, 1j, -1j)
         elif pauli == 'Z':
-            phases *= 1 - 2 * bit_vals  # +1 for 0, -1 for 1
+            phases *= 1 - 2 * bit_vals
 
     return flip_mask, phases
 
 
 def build_pauli_descriptors(n):
-    """
-    Build lightweight descriptors for all W basis Pauli strings
-    (1-local + nearest-neighbor 2-local on an open chain of n qubits).
-
-    Each descriptor enables O(d) matrix-vector application instead of
-    storing the full d x d matrix -- critical for n >= 11.
-    """
+    """Build descriptors for the 1-local and nearest-neighbor 2-local basis."""
     descriptors = []
     labels = []
-    # 1-local terms
     for i in range(n):
         for mu in ['X', 'Y', 'Z']:
             descriptors.append(_make_pauli_descriptor(n, [(i, mu)]))
             labels.append(f"{mu}_{i}")
-    # 2-local nearest-neighbor terms
     for i in range(n - 1):
         for mu, nu in iprod(['X', 'Y', 'Z'], repeat=2):
             descriptors.append(_make_pauli_descriptor(n, [(i, mu), (i + 1, nu)]))
@@ -116,20 +77,9 @@ def apply_pauli_vec(v, descriptor):
     return result
 
 
-# ======================================================================
-# Hamiltonian and V-basis construction (memory-efficient)
-# ======================================================================
 
 def build_hamiltonian(n, rng):
-    """
-    Build a random dense nearest-neighbor 2-local Hamiltonian:
-        H = sum_{i,mu} h_{i,mu} sigma_i^mu
-          + sum_{i,mu,nu} J_{i,mu,nu} sigma_i^mu sigma_{i+1}^nu
-    with all coefficients i.i.d. N(0,1).
-
-    Uses O(d) per basis element via Pauli descriptors instead of
-    storing full d x d basis matrices.
-    """
+    """Build a random nearest-neighbor 2-local Hamiltonian."""
     descriptors, labels = build_pauli_descriptors(n)
     d = 2 ** n
     m = len(descriptors)
@@ -145,10 +95,7 @@ def build_hamiltonian(n, rng):
 
 
 def build_V_coeffs(coeffs):
-    """
-    Compute V_coeffs: orthonormal basis for V = W \cap H^perp in
-    coefficient space. V_coeffs has shape (m, m-1).
-    """
+    """Return an orthonormal coefficient basis for W intersect H-perp."""
     m = len(coeffs)
     c = np.array(coeffs, dtype=np.float64)
     c_norm = np.linalg.norm(c)
@@ -158,15 +105,12 @@ def build_V_coeffs(coeffs):
     P = np.eye(m) - np.outer(h_hat, h_hat)
     U_svd, S, _ = np.linalg.svd(P, full_matrices=False)
     keep = S > 1e-10
-    V_coeffs = U_svd[:, keep]  # (m, m-1)
+    V_coeffs = U_svd[:, keep]
     dim_V = V_coeffs.shape[1]
     assert dim_V == m - 1, f"Expected dim(V)={m-1}, got {dim_V}"
     return V_coeffs
 
 
-# ======================================================================
-# Core computation
-# ======================================================================
 
 def diagonalize_hamiltonian(H):
     """Diagonalize Hermitian H = U diag(eigvals) U^dagger."""
@@ -175,25 +119,14 @@ def diagonalize_hamiltonian(H):
 
 
 def compute_all_K(descriptors, V_coeffs, eigvals, U, t_array, d):
-    """
-    Compute K(t) for ALL time points simultaneously.
-    K_{ab}(t) = (1/d) sum_j e^{i lam_j t}
-                       sum_k e^{-i lam_k t} \tilde{E}_a_{jk} conj(\tilde{E}_b_{jk})
-
-    Row j of each \tilde{W}_a is computed on-the-fly via Pauli string
-    application:
-      Z[:, a] = W_a v_j         (O(d) per basis element)
-      w_j     = Z^dagger U      (one matmul per j)
-      V_j     = V^T w_j         (project to V subspace)
-    then accumulate K.
-    """
+    """Compute the K(t) matrices across the whole time grid."""
     m = len(descriptors)
     dim_V = V_coeffs.shape[1]
     n_times = len(t_array)
-    VT = V_coeffs.T  # (dim_V, m)
+    VT = V_coeffs.T
 
-    u_all      = np.exp(1j * np.outer(t_array, eigvals))  # (n_times, d)
-    conj_u_all = np.conj(u_all)                            # (n_times, d)
+    u_all      = np.exp(1j * np.outer(t_array, eigvals))
+    conj_u_all = np.conj(u_all)
 
     K_all = np.zeros((n_times, dim_V, dim_V), dtype=np.complex128)
     P_buf = np.empty((n_times, dim_V, d), dtype=np.complex128)
@@ -204,12 +137,12 @@ def compute_all_K(descriptors, V_coeffs, eigvals, U, t_array, d):
         for a in range(m):
             Z[:, a] = apply_pauli_vec(v_j, descriptors[a])
 
-        w_j = Z.conj().T @ U  # (m, d)
-        V_j = VT @ w_j        # (dim_V, d)
+        w_j = Z.conj().T @ U
+        V_j = VT @ w_j
 
         np.multiply(V_j, conj_u_all[:, None, :], out=P_buf)
-        V_j_conj_T = V_j.conj().T                 # (d, dim_V)
-        C = np.matmul(P_buf, V_j_conj_T)          # (n_times, dim_V, dim_V)
+        V_j_conj_T = V_j.conj().T
+        C = np.matmul(P_buf, V_j_conj_T)
         K_all += u_all[:, j:j+1, None] * C
 
     K_all /= d
@@ -217,12 +150,7 @@ def compute_all_K(descriptors, V_coeffs, eigvals, U, t_array, d):
 
 
 def compute_M_self(K):
-    """
-    M_self(t) = sup_{|x|=1, x real} x^T K(t) x  (signed, no absolute value).
-
-    Equals the largest eigenvalue of Re(K_S) where K_S = (K + K^T)/2,
-    since Im(K_S) = 0 to machine precision for this Hamiltonian class.
-    """
+    """Return the largest real symmetric eigenvalue of K."""
     K_S = (K + K.T) / 2
     K_S_re = np.real(K_S)
     K_S_im = np.imag(K_S)
@@ -244,12 +172,7 @@ def compute_M_self(K):
 
 
 def compute_single_realization(n, t_array, seed):
-    """
-    Full pipeline for one Hamiltonian realization:
-      1. Build H, Pauli descriptors, V coefficients
-      2. Diagonalize H
-      3. Compute K(t) on the time grid, extract M_gen(t), M_self(t)
-    """
+    """Run one Hamiltonian realization on the full time grid."""
     rng = np.random.default_rng(seed)
     d = 2 ** n
 
@@ -287,9 +210,6 @@ def compute_single_realization(n, t_array, seed):
     return M_self_array, checks
 
 
-# ======================================================================
-# Runner
-# ======================================================================
 
 def make_time_grid():
     return np.arange(0.0, T_MAX + DT / 2, DT)
@@ -425,10 +345,6 @@ def make_plots(t_array, all_results):
     flush_print(f"Saved {path}")
     plt.close(fig)
 
-
-# ======================================================================
-# Main
-# ======================================================================
 
 if __name__ == "__main__":
     os.makedirs(OUTPUT_DIR, exist_ok=True)

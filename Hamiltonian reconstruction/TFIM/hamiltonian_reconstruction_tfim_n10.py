@@ -1,24 +1,13 @@
-"""TFIM Hamiltonian reconstruction at n=10.
-
-Family:    H = sum_i h_i X_i + sum_i J_i Z_i Z_{i+1}        (|V| = 2n - 1)
-Sampling:  h_i, J_i ~ Uniform[-1, 1]  (H is NOT normalized)
-Shadow:    2 measurement settings (global X-basis for the X_i,
-           computational/Z basis for the Z_i Z_{i+1}).
-"""
-import os
+"""Run n=10 TFIM Hamiltonian reconstruction with two fixed shadow bases."""
 import sys
 from pathlib import Path
 
-# Make recon_common.py importable regardless of the space in the parent dir.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import numpy as np
 import recon_common as rc
 
 
-# ──────────────────────────────────────────────────
-#  Model definition
-# ──────────────────────────────────────────────────
 def family_labels(n):
     labels, names = [], []
     for i in range(n):
@@ -46,7 +35,6 @@ def estimate_shadow(psi_t, n, n_shots, rng):
     n_x = n_shots // 2
     n_z = n_shots - n_x
 
-    # X-basis measurement -> X_i estimates
     U_x = rc.rotation_unitary(tuple([0] * n))
     phi = U_x @ psi_t
     p_x = phi.real ** 2 + phi.imag ** 2
@@ -57,7 +45,6 @@ def estimate_shadow(psi_t, n, n_shots, rng):
     for i in range(n):
         est[i] = np.mean(s_x[:, i])
 
-    # Z-basis (no rotation) -> Z_i Z_{i+1} estimates
     p_z = psi_t.real ** 2 + psi_t.imag ** 2
     p_z /= p_z.sum()
     out = rng.choice(d, size=n_z, p=p_z)
@@ -69,9 +56,6 @@ def estimate_shadow(psi_t, n, n_shots, rng):
     return est
 
 
-# ──────────────────────────────────────────────────
-#  Public API (kept stable for sweep scripts)
-# ──────────────────────────────────────────────────
 def run_trial(n, t, n_probes, shots_per_probe,
               seed_instance=0, seed_probes=1, seed_shadows=2,
               n_jobs=rc.N_JOBS):
@@ -85,9 +69,6 @@ def run_trial(n, t, n_probes, shots_per_probe,
     )
 
 
-# ──────────────────────────────────────────────────
-#  Main
-# ──────────────────────────────────────────────────
 if __name__ == "__main__":
     n = 10
     seed_inst = 123

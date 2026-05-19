@@ -1,16 +1,4 @@
-"""TFIM n=10 probe-count scaling.
-
-Fixed shots per probe = 50 000. Vary the number of probes.
-For each grid point, repeat over several independent probe/shadow seeds
-(the Hamiltonian instance is fixed) and report mean +- std of
-
-    - operator-norm error   ||H_hat - H||_op
-    - mean absolute coefficient error   <|h_hat_i - h_i|>
-
-Outputs next to this script:
-    tfim_probe_sweep.csv
-    tfim_probe_sweep.pdf
-"""
+"""Sweep product-probe counts for n=10 TFIM reconstruction."""
 import os
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")

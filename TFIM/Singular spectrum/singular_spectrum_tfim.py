@@ -1,22 +1,6 @@
-"""Figure: smallest two singular values of the learning matrix X
-versus the number of product-state probes N_S, for an open-boundary TFIM.
-
-Model (NOT rescaled):
-    H = sum_i g_i X_i  +  sum_i J_i Z_i Z_{i+1},   g_i, J_i ~ N(0, 1).
-
-Search family:
-    V = {X_i}_{i=1..n}  union  {Z_i Z_{i+1}}_{i=1..n-1}.
-
-For a fixed instance and a single product-probe pool of size N_max,
-we sweep N_S and, for each prefix of N_S probes, build the noiseless
-feature matrix and report sigma_1 (smallest) and sigma_2 (second
-smallest) of X.
-
-Outputs (next to this script):
-    tfim_singular_spectrum.csv       columns: N_S, sigma_1, sigma_2
-    tfim_singular_spectrum_meta.csv  scalar diagnostics
-"""
+"""Track the smallest TFIM learning-matrix singular values as probes grow."""
 import os
+
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
@@ -51,7 +35,6 @@ def main():
     t = 400.0
     seed_inst, seed_probes = 123, 456
 
-    # Sweep grid for N_S: log-spaced, starting at |V| so X has full column rank.
     Ns_grid = [20, 30, 50, 75, 100, 150, 200, 300, 500, 750, 1000, 1500, 2000]
     N_max = max(Ns_grid)
 
@@ -59,12 +42,11 @@ def main():
     rng_p = np.random.default_rng(seed_probes)
 
     labels, names = family_labels(n)
-    coeffs = rng_i.standard_normal(len(labels))   # raw, unnormalized
+    coeffs = rng_i.standard_normal(len(labels))
 
     H_true, true_h, descriptors = rc.build_hamiltonian(labels, coeffs)
     U = expm(-1j * t * H_true)
 
-    # Single big pool of probes; subsample prefixes for each N_S.
     probes = rc.sample_product_probes(n, N_max, rng_p)
     X_full = rc.build_feature_matrix_exact(U, probes, labels, descriptors,
                                            n_jobs=rc.N_JOBS)
@@ -82,7 +64,6 @@ def main():
               f"sigma_2={sigma_2:.4e}   ratio={sigma_2/sigma_1:.3e}"
               if sigma_1 > 0 else f"  N_S={NS}   sigma_1=0")
 
-    # Final-instance overlap diagnostic at N_max.
     _, svals_full, Vh_full = np.linalg.svd(X_full, full_matrices=False)
     h_hat = Vh_full[-1] / np.linalg.norm(Vh_full[-1])
     if np.dot(h_hat, true_h) < 0:

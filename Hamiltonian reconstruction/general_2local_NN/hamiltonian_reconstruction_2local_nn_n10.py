@@ -1,12 +1,4 @@
-"""General 2-local nearest-neighbor Hamiltonian reconstruction at n=10.
-
-Family:    H = sum_{i, P,Q in {X,Y,Z}} c_{i,P,Q} P_i Q_{i+1}   (|V| = 9(n-1))
-Sampling:  c_{i,P,Q} ~ N(0, 1)  (H is NOT normalized)
-Shadow:    9 measurement settings (one per (P,Q) pair). In setting (P,Q),
-           even-indexed qubits are measured in basis P, odd-indexed in Q;
-           together the 9 settings cover all 9*(n-1) correlators.
-"""
-import os
+"""Run n=10 reconstruction for the full nearest-neighbor 2-local Pauli family."""
 import sys
 from pathlib import Path
 
@@ -18,9 +10,6 @@ import recon_common as rc
 PAULI_NAMES = ["X", "Y", "Z"]
 
 
-# ──────────────────────────────────────────────────
-#  Model definition
-# ──────────────────────────────────────────────────
 def family_labels(n):
     labels, names = [], []
     for i in range(n - 1):
@@ -73,8 +62,6 @@ def estimate_shadow(psi_t, n, n_shots, rng):
             s = 1.0 - 2.0 * bits
 
             for i in range(n - 1):
-                # In setting (p,q): even-i bond measures P_iQ_{i+1};
-                # odd-i bond measures Q_iP_{i+1}.
                 if i % 2 == 0:
                     cp, cq = p, q
                 else:
@@ -84,9 +71,6 @@ def estimate_shadow(psi_t, n, n_shots, rng):
     return est
 
 
-# ──────────────────────────────────────────────────
-#  Public API
-# ──────────────────────────────────────────────────
 def run_trial(n, t, n_probes, shots_per_probe,
               seed_instance=0, seed_probes=1, seed_shadows=2,
               n_jobs=rc.N_JOBS):
@@ -100,9 +84,6 @@ def run_trial(n, t, n_probes, shots_per_probe,
     )
 
 
-# ──────────────────────────────────────────────────
-#  Main
-# ──────────────────────────────────────────────────
 if __name__ == "__main__":
     n = 10
     seed_inst = 123

@@ -1,3 +1,5 @@
+"""Animate TFIM commutator scaling exponents over evolution time."""
+
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
@@ -137,7 +139,7 @@ def compute_all(ns, tgrid, seed=0):
             H            = np.tensordot(g, B_arr, axes=[[0], [0]])
             evals, evecs = np.linalg.eigh(H)
             Vd           = evecs.conj().T
-            Bt           = compute_B_tilde(ZZ, XP, Vd, evecs)    # once per sample
+            Bt           = compute_B_tilde(ZZ, XP, Vd, evecs)
             state        = make_sample_state(n, Bt, evals, g)
 
             for ti, t in enumerate(tgrid):

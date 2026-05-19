@@ -1,29 +1,6 @@
-"""Figure: smoothed-analysis commutator gap for the structured TFIM.
-
-Model (NOT rescaled):
-    H(eps) = H_0 + eps V,
-    H_0 = sum_{i=1..n-1}  Z_i Z_{i+1},
-    V   = sum_{i=1..n}    g_i X_i,    g_i ~ N(0, 1).
-
-Search family:
-    V_search = {X_i}_{i=1..n} union {Z_i Z_{i+1}}_{i=1..n-1}.
-
-For each eps we build the commutator Gram matrix Gamma(H) on V_search via
-symbolic Pauli arithmetic, where
-
-    (1/2^n) ||[A, H]||_F^2 = 4 a^T Gamma a,    A = sum_a a_a P_a.
-
-Then
-
-    pi_H(eps) = 4 * lambda_min( Gamma restricted to h^perp ),
-
-with h the raw coefficient vector of H(eps) in V_search.
-
-Outputs (next to this script):
-    tfim_smoothed_gap.csv     columns: n, eps, median, q25, q75, n_samples
-    tfim_smoothed_gap_qc.txt  quality-check log
-"""
+"""Compute the smoothed TFIM commutator gap with symbolic Pauli arithmetic."""
 import os
+
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 os.environ.setdefault("MKL_NUM_THREADS", "1")
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
@@ -34,11 +11,6 @@ from pathlib import Path
 import numpy as np
 
 
-# ──────────────────────────────────────────────────
-#  Symbolic Pauli arithmetic
-#  Each Pauli string is encoded as (x, z, c) with matrix = c * X^x Z^z.
-#  Y_i = i * X_i Z_i ; we absorb i^{#Y} into c.
-# ──────────────────────────────────────────────────
 def label_to_xzc(label):
     n = len(label)
     x = 0
@@ -69,11 +41,10 @@ def commutator_pauli(P_a, P_c):
     """Return [P_a, P_c] as a list of (x, z, complex_coef) terms (0 or 1)."""
     xa, za, ca = P_a
     xc, zc, cc = P_c
-    # AB phase sign (-1)^popcount(za & xc), BA phase sign (-1)^popcount(zc & xa)
     sab = (-1) ** popcount(za & xc)
     sba = (-1) ** popcount(zc & xa)
     if sab == sba:
-        return []   # commute
+        return []
     x = xa ^ xc
     z = za ^ zc
     coef = (sab - sba) * ca * cc        # = 2 * sab * ca*cc
@@ -121,8 +92,7 @@ def hs_inner(D1, D2):
 
 
 def build_search_basis(n):
-    """V_search = X_0,...,X_{n-1}, Z0Z1,...,Z_{n-2}Z_{n-1}.
-    Returns labels (list[str]) and encoded P_v (list[(x,z,c)])."""
+    """Return the X_i and Z_i Z_{i+1} search basis."""
     labels = []
     for i in range(n):
         s = ["I"] * n
@@ -138,8 +108,7 @@ def build_search_basis(n):
 
 
 def gamma_matrix(P_basis, h_vec):
-    """Build Gamma_{ab} = (1/4) Re <[P_a,H], [P_b,H]>_HS,
-    so that (1/2^n)||[A,H]||_F^2 = 4 a^T Gamma a."""
+    """Build the commutator Gram matrix for H."""
     H_terms = [(complex(h_vec[i]), P_basis[i]) for i in range(len(P_basis))]
     Ls = [commutator_with_H(P_a, H_terms) for P_a in P_basis]
     m = len(P_basis)
@@ -157,18 +126,13 @@ def projected_min_eig(G, h_vec):
     nh = np.linalg.norm(h)
     m = G.shape[0]
     if nh < 1e-15:
-        # H = 0; no normalisation possible. Use lowest eigenvalue directly.
         return float(np.linalg.eigvalsh(G)[0])
-    # Orthonormal basis of h^perp via SVD of [h]^T (1 x m).
     _, _, Vh = np.linalg.svd(h.reshape(1, -1), full_matrices=True)
-    Q = Vh[1:].T            # m x (m-1), columns span h^perp
+    Q = Vh[1:].T
     Gp = Q.T @ G @ Q
     return float(np.linalg.eigvalsh(Gp)[0])
 
 
-# ──────────────────────────────────────────────────
-#  Main
-# ──────────────────────────────────────────────────
 def main():
     n_list = [10, 20, 30, 40, 50]
     eps_grid = np.round(np.linspace(-1.0, 1.0, 41), 6).tolist()
@@ -186,7 +150,6 @@ def main():
         m = len(P_basis)
         idx_X = list(range(0, n))
         idx_ZZ = list(range(n, m))
-        # h0 = ZZ-only base
         h_zz = np.zeros(m); h_zz[idx_ZZ] = 1.0
         G0 = gamma_matrix(P_basis, h_zz)
         qc_lines.append(
@@ -215,7 +178,6 @@ def main():
             rows.append([n, eps, mean, n_samples])
             print(f"  eps={eps:>+8.4f}  pi_mean={mean:.3e}  N={n_samples}")
 
-    # ── CSV ──
     with open(csv_path, "w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["n", "eps", "mean", "n_samples"])
