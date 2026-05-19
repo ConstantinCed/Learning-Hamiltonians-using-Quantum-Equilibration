@@ -1,40 +1,29 @@
-"""
-Fill the three ``skipped_memory_cap`` gaps from structured_push_50.json.
+"""Sparse / Gram-matrix backend for the witness-Hamiltonian rank check.
 
-Those three jobs have a dense |W| x |U| commutator matrix larger than the
-8 GB cap used in the original sweep:
+When the dense |W|x|U| commutator matrix exceeds available memory, we
+instead build a sparse representation of ``C(h)`` and read the rank
+from the spectrum of the dense |U|x|U| Gram matrix ``G(h) = C(h)^H C(h)``.
 
-  * push_tri_dense, triangular_torus (5, 5), k=3, R=2   |U|=9939, |W|=695793
-  * push_tri_dense, triangular_torus (6, 6), k=3, R=2   |U|=7239, |W|=535899
-  * push_d3_dense,  cubic_periodic   (3, 3, 3), k=3, R=2 |U|=10911, |W|=743340
+This module is a pure library (no CLI, no job suites). See
+``run_witness.py`` for a driver that chooses between the dense backend
+in ``witness_structured.py`` and the sparse backend defined here.
 
-Strategy
---------
-For each job:
-  1. Enumerate all anticommuting (u_i, u_j) pairs of the local family U_c
-     with nontrivial Pauli at the root and store the contributions as
-     sparse (row, col, h-index, phase) triples.
-  2. For a random integer h, materialise the commutator matrix
-     C(h) (shape |W| x |U|) as a scipy sparse matrix.
-  3. Compute G(h) = C(h)^H @ C(h), a dense |U| x |U| Hermitian PSD matrix
-     whose rank equals rank(C(h)).
-  4. Use numpy.linalg.eigvalsh to obtain the spectrum of G and read off
-     the rank.
+Pipeline:
+  1. ``precompute_sparse_structure`` enumerates anticommuting Pauli pairs
+     of the local family ``U_c`` with non-trivial action at the root.
+  2. ``commutator_rank_for_h`` materialises a sparse ``C(h)``, forms the
+     dense Gram ``G = C^H C``, and computes its spectrum.
+  3. ``search_witness`` / ``run_job_sparse`` wrap this in a witness
+     search compatible with the :class:`Job` dataclass.
 
-The bottleneck is the complex Hermitian eigendecomposition.  Apple's
-Accelerate framework runs ``zheevd`` at roughly 50 GFLOPS on this M-class
-chip, so for |U| ~ 7000-11000 each trial takes 10-40 minutes.  Witnesses
-are almost always found on the first trial, so we run a small number of
-trials per job and save results after each one.
-
-Results land in ``additional_results.json`` in the same directory.
+The complex Hermitian eigendecomposition is the bottleneck.  On Apple
+Accelerate (``zheevd``) the |U|~7000-11000 jobs take ~10-40 minutes per
+trial; witnesses are typically found on the first trial.
 """
 
-import json
 import os
 import sys
 import time
-from dataclasses import asdict
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
@@ -355,102 +344,3 @@ def run_job_sparse(job: Job, gram_cap_gb: float = 8.0, verbose: bool = True) -> 
         "elapsed_sec": float(time.time() - t0),
         **out,
     }
-
-
-# --------------------------------------------------------------------------
-# Jobs to run
-# --------------------------------------------------------------------------
-
-
-def missing_jobs() -> List[Job]:
-    """The three skipped_memory_cap entries in structured_push_50.json."""
-    return [
-        # smallest |U| first so we finish *something* quickly
-        Job(
-            tag="push_tri_dense_L6_k3_R2",
-            family="dense",
-            graph_kind="triangular_torus",
-            graph_args=(6, 6),
-            root=0,
-            R_patch=2,
-            trials=2,
-            seed=40001,
-            k=3,
-            R_geom=2,
-        ),
-        Job(
-            tag="push_tri_dense_L5_k3_R2",
-            family="dense",
-            graph_kind="triangular_torus",
-            graph_args=(5, 5),
-            root=0,
-            R_patch=2,
-            trials=2,
-            seed=40002,
-            k=3,
-            R_geom=2,
-        ),
-        Job(
-            tag="push_d3_dense_L3_k3_R2",
-            family="dense",
-            graph_kind="cubic_periodic",
-            graph_args=(3, 3, 3),
-            root=0,
-            R_patch=2,
-            trials=2,
-            seed=40003,
-            k=3,
-            R_geom=2,
-        ),
-    ]
-
-
-def main() -> None:
-    jobs = missing_jobs()
-    out_path = os.path.join(HERE, "additional_results.json")
-    results: List[Dict[str, Any]] = []
-    print(
-        f"Running {len(jobs)} additional jobs; writing -> {out_path}",
-        flush=True,
-    )
-    for i, job in enumerate(jobs, 1):
-        print(f"\n[{i}/{len(jobs)}] starting {job.tag}", flush=True)
-        try:
-            info = run_job_sparse(job, gram_cap_gb=8.0, verbose=True)
-        except Exception as exc:  # noqa: BLE001
-            import traceback
-            traceback.print_exc()
-            info = {"tag": job.tag, "error": str(exc)}
-        results.append(info)
-        with open(out_path, "w") as f:
-            json.dump(results, f, indent=2, default=str)
-        status = info.get("status", "?")
-        found = info.get("found_witness")
-        br = info.get("best_rank")
-        tr = info.get("target_rank")
-        uc = info.get("Uc_size")
-        wc = info.get("Wc_size")
-        el = info.get("elapsed_sec")
-        print(
-            f"[{i}/{len(jobs)}] DONE {info.get('tag', '?')} "
-            f"status={status} found={found} rank={br}/{tr} "
-            f"Uc={uc} Wc={wc} elapsed={el}",
-            flush=True,
-        )
-
-    print("\n=== FINAL SUMMARY ===", flush=True)
-    for info in results:
-        if "error" in info:
-            print(f"  {info['tag']}: ERROR {info['error']}")
-        else:
-            print(
-                f"  {info['tag']}: status={info.get('status')} "
-                f"found={info.get('found_witness')} "
-                f"rank={info.get('best_rank')}/{info.get('target_rank')} "
-                f"Uc={info.get('Uc_size')} Wc={info.get('Wc_size')} "
-                f"({info.get('elapsed_sec'):.1f}s)"
-            )
-
-
-if __name__ == "__main__":
-    main()

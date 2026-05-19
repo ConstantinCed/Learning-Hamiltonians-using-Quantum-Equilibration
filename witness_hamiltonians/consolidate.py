@@ -1,30 +1,39 @@
-"""Consolidate all three result files and print a clean coverage table."""
+"""Pretty-print the consolidated witness-Hamiltonian coverage.
+
+Reads every ``<family>/<lattice>.json`` produced by ``run_witness.py``
+and prints, per (lattice, family), the certified (L, k, R) cells plus a
+clean ``(k, R)`` coverage summary for the generic ``dense`` family.
+"""
 import json
+import os
 from collections import defaultdict
 
-FILES = [
-    "structured_fast_50.json",
-    "structured_push_50.json",
-    "additional_results.json",
-]
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 canon = {}
-for fn in FILES:
-    with open(fn) as f:
-        for r in json.load(f):
-            key = (
-                r["family"],
-                r["graph_kind"],
-                tuple(r["graph_args"]),
-                r.get("k"),
-                r.get("R_geom"),
-                r["R_patch"],
-            )
-            fw = r.get("found_witness", False)
-            if fw:
-                canon[key] = ("OK", fn)
-            elif key not in canon:
-                canon[key] = (r.get("status", "?"), fn)
+for fam in sorted(os.listdir(HERE)):
+    fam_dir = os.path.join(HERE, fam)
+    if not os.path.isdir(fam_dir) or fam.startswith(".") or fam.startswith("_"):
+        continue
+    for fn in sorted(os.listdir(fam_dir)):
+        if not fn.endswith(".json"):
+            continue
+        with open(os.path.join(fam_dir, fn)) as f:
+            for r in json.load(f):
+                key = (
+                    r["family"],
+                    r["graph_kind"],
+                    tuple(r["graph_args"]),
+                    r.get("k"),
+                    r.get("R_geom"),
+                    r["R_patch"],
+                )
+                fw = r.get("found_witness", False)
+                src = f"{fam}/{fn}"
+                if fw:
+                    canon[key] = ("OK", src)
+                elif key not in canon:
+                    canon[key] = (r.get("status", "?"), src)
 
 groups = defaultdict(list)
 for (fam, gk, ga, k, Rg, Rp), (flag, fn) in canon.items():
@@ -36,10 +45,9 @@ for (gk, fam), rows in sorted(groups.items()):
     rows.sort()
     print(f"\n[{gk}] family = {fam}   ({len(rows)} entries)")
     for ga, k, Rg, Rp, flag, fn in rows:
-        src = fn.replace("structured_", "").replace(".json", "")
         kstr = f"k={k}" if k is not None else "k=- "
         Rstr = f"R={Rg}" if Rg is not None else "R=- "
-        print(f"   L={ga}  {kstr}  {Rstr}  Rpatch={Rp}   {flag:5s}   [{src}]")
+        print(f"   L={ga}  {kstr}  {Rstr}  Rpatch={Rp}   {flag:5s}   [{fn}]")
 
 # Build clean (k, R) coverage table for the "dense" family
 print("\n" + "=" * 72)

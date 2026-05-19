@@ -1,0 +1,119 @@
+[
+  {
+    "tag": "kitaev_honey_2d",
+    "family": "kitaev_honey_2d",
+    "graph_kind": "honeycomb_torus",
+    "graph_args": [
+      3,
+      3
+    ],
+    "k": null,
+    "R_geom": null,
+    "R_patch": 1,
+    "patch_sites": 1,
+    "elapsed_sec": 0.0013782978057861328,
+    "status": "ok",
+    "found_witness": true,
+    "best_rank": 2,
+    "target_rank": 2,
+    "Uc_size": 3,
+    "Wc_size": 3,
+    "estimated_dense_gb": 1.341104507446289e-07,
+    "best_h_real": [
+      3.0,
+      1.0,
+      -2.0
+    ],
+    "_sources": [
+      "structured_fast_50.json"
+    ]
+  },
+  {
+    "tag": "kitaev_honey_2d",
+    "family": "kitaev_honey_2d",
+    "graph_kind": "honeycomb_torus",
+    "graph_args": [
+      4,
+      4
+    ],
+    "k": null,
+    "R_geom": null,
+    "R_patch": 1,
+    "patch_sites": 1,
+    "elapsed_sec": 0.0008876323699951172,
+    "status": "ok",
+    "found_witness": true,
+    "best_rank": 2,
+    "target_rank": 2,
+    "Uc_size": 3,
+    "Wc_size": 3,
+    "estimated_dense_gb": 1.341104507446289e-07,
+    "best_h_real": [
+      -2.0,
+      0.0,
+      1.0
+    ],
+    "_sources": [
+      "structured_fast_50.json"
+    ]
+  },
+  {
+    "tag": "kitaev_honey_2d",
+    "family": "kitaev_honey_2d",
+    "graph_kind": "honeycomb_torus",
+    "graph_args": [
+      5,
+      5
+    ],
+    "k": null,
+    "R_geom": null,
+    "R_patch": 1,
+    "patch_sites": 1,
+    "elapsed_sec": 0.0007829666137695312,
+    "status": "ok",
+    "found_witness": true,
+    "best_rank": 2,
+    "target_rank": 2,
+    "Uc_size": 3,
+    "Wc_size": 3,
+    "estimated_dense_gb": 1.341104507446289e-07,
+    "best_h_real": [
+      3.0,
+      0.0,
+      -2.0
+    ],
+    "_sources": [
+      "structured_fast_50.json",
+      "structured_push_50.json"
+    ]
+  },
+  {
+    "tag": "push_kitaev_honey_2d",
+    "family": "kitaev_honey_2d",
+    "graph_kind": "honeycomb_torus",
+    "graph_args": [
+      6,
+      6
+    ],
+    "k": null,
+    "R_geom": null,
+    "R_patch": 1,
+    "patch_sites": 1,
+    "elapsed_sec": 0.0010097026824951172,
+    "status": "ok",
+    "found_witness": true,
+    "best_rank": 2,
+    "target_rank": 2,
+    "Uc_size": 3,
+    "Wc_size": 3,
+    "estimated_dense_gb": 1.341104507446289e-07,
+    "best_h_real": [
+      0.0,
+      0.0,
+      -2.0
+    ],
+    "_sources": [
+      "structured_push_50.json"
+    ]
+  }
+]

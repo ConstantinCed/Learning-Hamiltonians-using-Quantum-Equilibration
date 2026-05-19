@@ -1,0 +1,282 @@
+[
+  {
+    "tag": "d1_xyz",
+    "family": "xyz",
+    "graph_kind": "cycle",
+    "graph_args": [
+      9
+    ],
+    "k": null,
+    "R_geom": null,
+    "R_patch": 1,
+    "patch_sites": 3,
+    "elapsed_sec": 0.0015919208526611328,
+    "status": "ok",
+    "found_witness": true,
+    "best_rank": 14,
+    "target_rank": 14,
+    "Uc_size": 15,
+    "Wc_size": 21,
+    "estimated_dense_gb": 4.693865776062012e-06,
+    "best_h_real": [
+      2.0,
+      -3.0,
+      1.0,
+      -1.0,
+      -2.0,
+      -3.0,
+      1.0,
+      -2.0,
+      2.0,
+      2.0,
+      1.0,
+      1.0,
+      2.0,
+      0.0,
+      -2.0
+    ],
+    "_sources": [
+      "structured_fast_50.json"
+    ]
+  },
+  {
+    "tag": "d1_xyz",
+    "family": "xyz",
+    "graph_kind": "cycle",
+    "graph_args": [
+      11
+    ],
+    "k": null,
+    "R_geom": null,
+    "R_patch": 1,
+    "patch_sites": 3,
+    "elapsed_sec": 0.0013000965118408203,
+    "status": "ok",
+    "found_witness": true,
+    "best_rank": 14,
+    "target_rank": 14,
+    "Uc_size": 15,
+    "Wc_size": 21,
+    "estimated_dense_gb": 4.693865776062012e-06,
+    "best_h_real": [
+      -1.0,
+      -2.0,
+      -3.0,
+      0.0,
+      0.0,
+      -2.0,
+      1.0,
+      -3.0,
+      -2.0,
+      -3.0,
+      0.0,
+      -1.0,
+      0.0,
+      -1.0,
+      -1.0
+    ],
+    "_sources": [
+      "structured_fast_50.json"
+    ]
+  },
+  {
+    "tag": "d1_xyz",
+    "family": "xyz",
+    "graph_kind": "cycle",
+    "graph_args": [
+      13
+    ],
+    "k": null,
+    "R_geom": null,
+    "R_patch": 1,
+    "patch_sites": 3,
+    "elapsed_sec": 0.0013072490692138672,
+    "status": "ok",
+    "found_witness": true,
+    "best_rank": 14,
+    "target_rank": 14,
+    "Uc_size": 15,
+    "Wc_size": 21,
+    "estimated_dense_gb": 4.693865776062012e-06,
+    "best_h_real": [
+      -2.0,
+      2.0,
+      0.0,
+      -3.0,
+      3.0,
+      1.0,
+      3.0,
+      0.0,
+      1.0,
+      1.0,
+      1.0,
+      -2.0,
+      -3.0,
+      0.0,
+      2.0
+    ],
+    "_sources": [
+      "structured_fast_50.json"
+    ]
+  },
+  {
+    "tag": "push_d1_xyz",
+    "family": "xyz",
+    "graph_kind": "cycle",
+    "graph_args": [
+      15
+    ],
+    "k": null,
+    "R_geom": null,
+    "R_patch": 1,
+    "patch_sites": 3,
+    "elapsed_sec": 0.0014379024505615234,
+    "status": "ok",
+    "found_witness": true,
+    "best_rank": 14,
+    "target_rank": 14,
+    "Uc_size": 15,
+    "Wc_size": 21,
+    "estimated_dense_gb": 4.693865776062012e-06,
+    "best_h_real": [
+      -2.0,
+      3.0,
+      -3.0,
+      1.0,
+      -3.0,
+      2.0,
+      0.0,
+      2.0,
+      0.0,
+      -1.0,
+      0.0,
+      -1.0,
+      -1.0,
+      -3.0,
+      3.0
+    ],
+    "_sources": [
+      "structured_push_50.json"
+    ]
+  },
+  {
+    "tag": "push_d1_xyz",
+    "family": "xyz",
+    "graph_kind": "cycle",
+    "graph_args": [
+      17
+    ],
+    "k": null,
+    "R_geom": null,
+    "R_patch": 1,
+    "patch_sites": 3,
+    "elapsed_sec": 0.0013492107391357422,
+    "status": "ok",
+    "found_witness": true,
+    "best_rank": 14,
+    "target_rank": 14,
+    "Uc_size": 15,
+    "Wc_size": 21,
+    "estimated_dense_gb": 4.693865776062012e-06,
+    "best_h_real": [
+      -2.0,
+      -3.0,
+      1.0,
+      -1.0,
+      -2.0,
+      1.0,
+      -2.0,
+      -3.0,
+      -3.0,
+      -2.0,
+      -1.0,
+      2.0,
+      -1.0,
+      -2.0,
+      3.0
+    ],
+    "_sources": [
+      "structured_push_50.json"
+    ]
+  },
+  {
+    "tag": "push_d1_xyz",
+    "family": "xyz",
+    "graph_kind": "cycle",
+    "graph_args": [
+      21
+    ],
+    "k": null,
+    "R_geom": null,
+    "R_patch": 1,
+    "patch_sites": 3,
+    "elapsed_sec": 0.0013356208801269531,
+    "status": "ok",
+    "found_witness": true,
+    "best_rank": 14,
+    "target_rank": 14,
+    "Uc_size": 15,
+    "Wc_size": 21,
+    "estimated_dense_gb": 4.693865776062012e-06,
+    "best_h_real": [
+      1.0,
+      1.0,
+      3.0,
+      1.0,
+      -1.0,
+      -3.0,
+      3.0,
+      -2.0,
+      0.0,
+      -1.0,
+      1.0,
+      -3.0,
+      2.0,
+      1.0,
+      -2.0
+    ],
+    "_sources": [
+      "structured_push_50.json"
+    ]
+  },
+  {
+    "tag": "push_d1_xyz",
+    "family": "xyz",
+    "graph_kind": "cycle",
+    "graph_args": [
+      25
+    ],
+    "k": null,
+    "R_geom": null,
+    "R_patch": 1,
+    "patch_sites": 3,
+    "elapsed_sec": 0.0013592243194580078,
+    "status": "ok",
+    "found_witness": true,
+    "best_rank": 14,
+    "target_rank": 14,
+    "Uc_size": 15,
+    "Wc_size": 21,
+    "estimated_dense_gb": 4.693865776062012e-06,
+    "best_h_real": [
+      -1.0,
+      1.0,
+      -2.0,
+      -3.0,
+      2.0,
+      0.0,
+      -2.0,
+      1.0,
+      0.0,
+      -2.0,
+      2.0,
+      -1.0,
+      1.0,
+      1.0,
+      -1.0
+    ],
+    "_sources": [
+      "structured_push_50.json"
+    ]
+  }
+]
