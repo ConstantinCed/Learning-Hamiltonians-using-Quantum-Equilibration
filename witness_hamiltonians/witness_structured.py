@@ -89,7 +89,8 @@ def pauli_tuple_to_xz(op: Tuple[str, ...]) -> Tuple[int, int]:
 
 
 def symplectic_commute_parity(x1: int, z1: int, x2: int, z2: int) -> int:
-    return (((x1 & z2).bit_count() + (z1 & x2).bit_count()) & 1)
+    # ``int.bit_count`` is Python 3.10+; use the bin/count fallback for 3.9.
+    return ((bin(x1 & z2).count("1") + bin(z1 & x2).count("1")) & 1)
 
 
 def dedup_ops(U: List[Tuple[str, ...]]) -> List[Tuple[str, ...]]:
