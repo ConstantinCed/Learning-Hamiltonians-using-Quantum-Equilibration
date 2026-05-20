@@ -196,6 +196,8 @@ def _periodic_xyz_cycle_jobs() -> List[Job]:
 
 
 def _periodic_full_nn_cycle_jobs() -> List[Job]:
+    # Redundant with dense k=2, R=1 on the 1D chain; retained to reproduce
+    # legacy JSON artifacts explicitly when requested.
     return [
         Job(
             tag=f"periodic_fullnn_cycle_L{L}",
@@ -575,7 +577,7 @@ def main() -> None:
     parser.add_argument(
         "--families",
         nargs="+",
-        default=["dense", "xyz", "full_nn_2body_all_fields"],
+        default=["dense", "xyz"],
         help="Restrict to a subset of families.",
     )
     parser.add_argument(

@@ -414,6 +414,8 @@ def xyz_fields_family(G: nx.Graph) -> List[Dict[int, str]]:
 
 
 def full_nn_2body_all_fields_family(G: nx.Graph) -> List[Dict[int, str]]:
+    # On path/cycle graphs this coincides with the dense k=2, R=1 family.
+    # It is retained for reproducing legacy full_nn_2body_all_fields results.
     V = []
     for v in G.nodes():
         V += [{v: "X"}, {v: "Y"}, {v: "Z"}]
