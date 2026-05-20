@@ -133,3 +133,39 @@ for boundary, gk in order:
                     f"   k = {k}   R partially certified/skipped in "
                     f"{{{', '.join(map(str, Rs))}}}"
                 )
+
+print("\n" + "=" * 88)
+print("EXACT TWO-BODY / NO-FIELD COVERAGE (R, by boundary and lattice)")
+print("=" * 88)
+two_body_groups = defaultdict(list)
+for (boundary, fam, gk, _ga, _k, Rg, _Rp, mode, _root_label), (flag, _fn) in canon.items():
+    if fam == "full_2body_no_fields":
+        two_body_groups[(boundary, gk, mode, Rg)].append(flag)
+
+two_body_cov = defaultdict(set)
+two_body_partial = defaultdict(set)
+for (boundary, gk, mode, Rg), flags in two_body_groups.items():
+    if all(flag == "OK" for flag in flags):
+        two_body_cov[(boundary, gk, mode)].add(Rg)
+    elif any(flag == "OK" for flag in flags):
+        two_body_partial[(boundary, gk, mode)].add(Rg)
+
+for boundary, gk in order:
+    modes = sorted({
+        mode
+        for b, g, mode in set(two_body_cov) | set(two_body_partial)
+        if b == boundary and g == gk
+    })
+    for mode in modes:
+        Rs = sorted(two_body_cov.get((boundary, gk, mode), set()))
+        partial_Rs = sorted(two_body_partial.get((boundary, gk, mode), set()))
+        if not Rs and not partial_Rs:
+            continue
+        print(f"\n{label[gk]} ({boundary}/{gk}, mode={mode}):")
+        if Rs:
+            print(f"   R in {{{', '.join(map(str, Rs))}}}")
+        if partial_Rs:
+            print(
+                f"   R partially certified/skipped in "
+                f"{{{', '.join(map(str, partial_Rs))}}}"
+            )

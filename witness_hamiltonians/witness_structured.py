@@ -426,6 +426,20 @@ def full_nn_2body_all_fields_family(G: nx.Graph) -> List[Dict[int, str]]:
     return V
 
 
+def full_2body_no_fields_family(G: nx.Graph, R_geom: int) -> List[Dict[int, str]]:
+    V = []
+    nodes = sorted(G.nodes())
+    for i, u in enumerate(nodes):
+        dist = nx.single_source_shortest_path_length(G, u, cutoff=R_geom)
+        for v in nodes[i + 1 :]:
+            if v not in dist:
+                continue
+            for a in PAULIS:
+                for b in PAULIS:
+                    V.append({u: a, v: b})
+    return V
+
+
 def build_Wc(U_ops: List[Tuple[str, ...]], root_patch: int) -> List[Tuple[str, ...]]:
     W = []
     seen = set()
@@ -604,6 +618,13 @@ def build_local_family_for_job(job: Job) -> Tuple[List[Tuple[str, ...]], List[in
     if job.family == "full_nn_2body_all_fields":
         G = make_graph(job.graph_kind, job.graph_args)
         V = full_nn_2body_all_fields_family(G)
+        if job.local_mode == "formal_uc":
+            return build_formal_uc_from_global_terms(G, V, job.root, job.R_patch)
+        return build_local_from_global_terms(G, V, job.root, job.R_patch)
+
+    if job.family == "full_2body_no_fields":
+        G = make_graph(job.graph_kind, job.graph_args)
+        V = full_2body_no_fields_family(G, job.R_geom)
         if job.local_mode == "formal_uc":
             return build_formal_uc_from_global_terms(G, V, job.root, job.R_patch)
         return build_local_from_global_terms(G, V, job.root, job.R_patch)

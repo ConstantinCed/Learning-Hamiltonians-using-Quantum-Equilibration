@@ -214,6 +214,42 @@ def _periodic_full_nn_cycle_jobs() -> List[Job]:
     ]
 
 
+def _periodic_full_2body_no_fields_jobs() -> List[Job]:
+    specs = [
+        ("cycle", (9,), 1, 80_101),
+        ("cycle", (12,), 2, 80_102),
+        ("grid_periodic", (9, 9), 1, 81_101),
+        ("grid_periodic", (9, 9), 2, 81_102),
+        ("triangular_torus", (9, 9), 1, 82_101),
+        ("triangular_torus", (9, 9), 2, 82_102),
+        ("honeycomb_torus", (9, 9), 1, 83_101),
+        ("honeycomb_torus", (9, 9), 2, 83_102),
+        ("cubic_periodic", (9, 9, 9), 1, 84_101),
+        ("cubic_periodic", (9, 9, 9), 2, 84_102),
+    ]
+    return [
+        Job(
+            tag=f"periodic_full2body_no_fields_{graph_kind}_R{R}",
+            family="full_2body_no_fields",
+            graph_kind=graph_kind,
+            graph_args=graph_args,
+            root=0,
+            R_patch=R,
+            trials=500,
+            seed=seed,
+            k=2,
+            R_geom=R,
+            boundary="periodic",
+            local_mode="formal_uc",
+            coverage_note=(
+                "formal proof U_c: all exact two-body terms of range R whose "
+                "support intersects B(root,R); no one-body fields"
+            ),
+        )
+        for graph_kind, graph_args, R, seed in specs
+    ]
+
+
 def _node_coord(G: nx.Graph, root: int) -> Any:
     return G.nodes[root].get("coord", root)
 
@@ -386,6 +422,45 @@ def _open_structured_path_jobs(family: str, seed_base: int) -> List[Job]:
     ]
 
 
+def _open_full_2body_no_fields_jobs() -> List[Job]:
+    specs = [
+        ("path", (9,), 80_000),
+        ("grid_open", (9, 9), 81_000),
+        ("triangular_open", (9, 9), 82_000),
+        ("honeycomb_open", (9, 9), 83_000),
+        ("cubic_open", (9, 9, 9), 84_000),
+    ]
+    jobs: List[Job] = []
+    for graph_kind, graph_args, seed_base in specs:
+        G = make_graph(graph_kind, graph_args)
+        for R in [1, 2]:
+            reps = _rooted_patch_representatives(G, 2 * R)
+            for idx, (root, roots) in enumerate(reps):
+                jobs.append(
+                    _open_job_for_rep(
+                        family="full_2body_no_fields",
+                        graph_kind=graph_kind,
+                        graph_args=graph_args,
+                        root=root,
+                        roots=roots,
+                        idx=idx,
+                        R_patch=R,
+                        k=2,
+                        R_geom=R,
+                        seed=seed_base + 10 * R,
+                        trials=500,
+                        G=G,
+                        coverage_note=(
+                            "formal proof U_c: all exact two-body terms of "
+                            "range R whose support intersects B(root,R); "
+                            "no one-body fields; representatives are rooted "
+                            "radius-2R environments"
+                        ),
+                    )
+                )
+    return jobs
+
+
 def all_jobs_by_family(boundary: str) -> Dict[str, List[Job]]:
     if boundary == "periodic":
         return {
@@ -398,6 +473,7 @@ def all_jobs_by_family(boundary: str) -> Dict[str, List[Job]]:
             ),
             "xyz": _periodic_xyz_cycle_jobs(),
             "full_nn_2body_all_fields": _periodic_full_nn_cycle_jobs(),
+            "full_2body_no_fields": _periodic_full_2body_no_fields_jobs(),
         }
     if boundary == "open_boundary":
         return {
@@ -406,6 +482,7 @@ def all_jobs_by_family(boundary: str) -> Dict[str, List[Job]]:
             "full_nn_2body_all_fields": _open_structured_path_jobs(
                 "full_nn_2body_all_fields", 70_000
             ),
+            "full_2body_no_fields": _open_full_2body_no_fields_jobs(),
         }
     raise ValueError(boundary)
 
@@ -500,10 +577,10 @@ def _family_size(job: Job) -> int:
 
 
 def run_one(job: Job, memory_cap_gb: float = 8.0, verbose: bool = True) -> Dict[str, Any]:
-    from additional_runs import run_job_sparse  # noqa: WPS433
-
     Uc_size = _family_size(job)
     if Uc_size > DENSE_TO_SPARSE_UC_THRESHOLD:
+        from additional_runs import run_job_sparse  # noqa: WPS433
+
         if verbose:
             print(f"  [sparse backend, |U_c|={Uc_size}>{DENSE_TO_SPARSE_UC_THRESHOLD}]")
         return run_job_sparse(job, gram_cap_gb=memory_cap_gb, verbose=verbose)
@@ -511,6 +588,8 @@ def run_one(job: Job, memory_cap_gb: float = 8.0, verbose: bool = True) -> Dict[
         print(f"  [dense backend, |U_c|={Uc_size}]")
     info = run_job(job, memory_cap_gb=memory_cap_gb)
     if info.get("status") == "skipped_memory_cap":
+        from additional_runs import run_job_sparse  # noqa: WPS433
+
         if verbose:
             print("  [dense skipped; falling back to sparse]")
         info = run_job_sparse(job, gram_cap_gb=memory_cap_gb, verbose=verbose)
@@ -577,7 +656,7 @@ def main() -> None:
     parser.add_argument(
         "--families",
         nargs="+",
-        default=["dense", "xyz"],
+        default=["dense", "xyz", "full_2body_no_fields"],
         help="Restrict to a subset of families.",
     )
     parser.add_argument(
