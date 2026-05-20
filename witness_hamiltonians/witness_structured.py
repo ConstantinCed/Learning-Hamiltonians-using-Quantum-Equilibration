@@ -112,6 +112,7 @@ def path_graph(n: int) -> nx.Graph:
     G.add_nodes_from(range(n))
     for i in range(n - 1):
         G.add_edge(i, i + 1)
+    nx.set_node_attributes(G, {i: i for i in G.nodes()}, "coord")
     return G
 
 
@@ -137,7 +138,7 @@ def grid_graph(Lx: int, Ly: int, periodic: bool = False) -> nx.Graph:
                     G.add_edge((x, y), (x + 1, y))
                 if y + 1 < Ly:
                     G.add_edge((x, y), (x, y + 1))
-    return nx.convert_node_labels_to_integers(G, ordering="sorted")
+    return nx.convert_node_labels_to_integers(G, ordering="sorted", label_attribute="coord")
 
 
 def cubic_graph(Lx: int, Ly: int, Lz: int, periodic: bool = False) -> nx.Graph:
@@ -161,7 +162,7 @@ def cubic_graph(Lx: int, Ly: int, Lz: int, periodic: bool = False) -> nx.Graph:
                         G.add_edge(u, (x, y + 1, z))
                     if z + 1 < Lz:
                         G.add_edge(u, (x, y, z + 1))
-    return nx.convert_node_labels_to_integers(G, ordering="sorted")
+    return nx.convert_node_labels_to_integers(G, ordering="sorted", label_attribute="coord")
 
 
 def triangular_torus_graph(Lx: int, Ly: int) -> nx.Graph:
@@ -180,7 +181,26 @@ def triangular_torus_graph(Lx: int, Ly: int) -> nx.Graph:
             for v in nbrs:
                 if u != v:
                     G.add_edge(u, v)
-    return nx.convert_node_labels_to_integers(G, ordering="sorted")
+    return nx.convert_node_labels_to_integers(G, ordering="sorted", label_attribute="coord")
+
+
+def triangular_open_graph(Lx: int, Ly: int) -> nx.Graph:
+    G = nx.Graph()
+    for x in range(Lx):
+        for y in range(Ly):
+            G.add_node((x, y))
+    for x in range(Lx):
+        for y in range(Ly):
+            u = (x, y)
+            nbrs = [
+                (x + 1, y),
+                (x, y + 1),
+                (x + 1, y - 1),
+            ]
+            for vx, vy in nbrs:
+                if 0 <= vx < Lx and 0 <= vy < Ly:
+                    G.add_edge(u, (vx, vy))
+    return nx.convert_node_labels_to_integers(G, ordering="sorted", label_attribute="coord")
 
 
 def honeycomb_torus_graph(Lx: int, Ly: int) -> nx.Graph:
@@ -196,7 +216,7 @@ def honeycomb_torus_graph(Lx: int, Ly: int) -> nx.Graph:
             G.add_edge(a, b)
             G.add_edge(a, ((x - 1) % Lx, y, 1))
             G.add_edge(a, (x, (y - 1) % Ly, 1))
-    return nx.convert_node_labels_to_integers(G, ordering="sorted")
+    return nx.convert_node_labels_to_integers(G, ordering="sorted", label_attribute="coord")
 
 
 def honeycomb_open_graph(Lx: int, Ly: int) -> nx.Graph:
@@ -214,7 +234,7 @@ def honeycomb_open_graph(Lx: int, Ly: int) -> nx.Graph:
                 G.add_edge(a, (x - 1, y, 1))
             if y - 1 >= 0:
                 G.add_edge(a, (x, y - 1, 1))
-    return nx.convert_node_labels_to_integers(G, ordering="sorted")
+    return nx.convert_node_labels_to_integers(G, ordering="sorted", label_attribute="coord")
 
 
 def ball_nodes(G: nx.Graph, root: int, R: int) -> set:
@@ -272,6 +292,69 @@ def local_dense_family_direct(
     return dedup_ops(U), patch_nodes, root_patch
 
 
+def _support_diameter_leq(
+    dist_by_node: Dict[int, Dict[int, int]],
+    support: Tuple[int, ...],
+    R: int,
+) -> bool:
+    for i, u in enumerate(support):
+        dist = dist_by_node[u]
+        for v in support[i + 1:]:
+            if dist.get(v, R + 1) > R:
+                return False
+    return True
+
+
+def formal_dense_family_uc(
+    G: nx.Graph,
+    root: int,
+    R_local: int,
+    k: int,
+    R_geom: int,
+) -> Tuple[List[Tuple[str, ...]], List[int], int]:
+    """Build the proof's formal U_c for the dense local Pauli family.
+
+    U_c consists of all global weight-<=k, diameter-<=R_geom terms whose
+    support intersects B(root, R_local).  The localized patch contains the full
+    support of every such term, not just the root ball.
+    """
+    core = ball_nodes(G, root, R_local)
+    supports = set()
+    dist_by_center = {
+        s: nx.single_source_shortest_path_length(G, s, cutoff=R_geom)
+        for s in core
+    }
+
+    for center in sorted(core):
+        near = sorted(dist_by_center[center])
+        for size in range(1, k + 1):
+            for rest in itertools.combinations([v for v in near if v != center], size - 1):
+                support = tuple(sorted((center,) + rest))
+                supports.add(support)
+
+    patch_nodes = sorted({v for support in supports for v in support})
+    patch_map = relabel_patch_nodes(patch_nodes)
+    root_patch = patch_map[root]
+    dist_by_node = {
+        v: nx.single_source_shortest_path_length(G, v, cutoff=R_geom)
+        for v in patch_nodes
+    }
+
+    U = []
+    n_patch = len(patch_nodes)
+    for support in sorted(supports, key=lambda S: (len(S), S)):
+        if not _support_diameter_leq(dist_by_node, support, R_geom):
+            continue
+        local_inds = [patch_map[v] for v in support]
+        for letters in itertools.product(PAULIS, repeat=len(support)):
+            op = ["I"] * n_patch
+            for idx, letter in zip(local_inds, letters):
+                op[idx] = letter
+            U.append(tuple(op))
+
+    return dedup_ops(U), patch_nodes, root_patch
+
+
 def build_local_from_global_terms(
     G: nx.Graph,
     V_global: List[Dict[int, str]],
@@ -291,6 +374,28 @@ def build_local_from_global_terms(
                 if v in patch_map:
                     loc[patch_map[v]] = p
             U.append(tuple(loc))
+
+    return dedup_ops(U), patch_nodes, root_patch
+
+
+def build_formal_uc_from_global_terms(
+    G: nx.Graph,
+    V_global: List[Dict[int, str]],
+    root: int,
+    R_local: int,
+) -> Tuple[List[Tuple[str, ...]], List[int], int]:
+    core = ball_nodes(G, root, R_local)
+    selected = [op for op in V_global if set(op.keys()) & core]
+    patch_nodes = sorted({v for op in selected for v in op})
+    patch_map = relabel_patch_nodes(patch_nodes)
+    root_patch = patch_map[root]
+
+    U = []
+    for op in selected:
+        loc = ["I"] * len(patch_nodes)
+        for v, p in op.items():
+            loc[patch_map[v]] = p
+        U.append(tuple(loc))
 
     return dedup_ops(U), patch_nodes, root_patch
 
@@ -317,60 +422,6 @@ def full_nn_2body_all_fields_family(G: nx.Graph) -> List[Dict[int, str]]:
             for b in PAULIS:
                 V.append({u: a, v: b})
     return V
-
-
-def kitaev_honeycomb_fields_fixed(Lx: int, Ly: int, periodic: bool = True) -> Tuple[nx.Graph, List[Dict[int, str]]]:
-    if periodic:
-        Graw = nx.Graph()
-        for x in range(Lx):
-            for y in range(Ly):
-                Graw.add_node((x, y, 0))
-                Graw.add_node((x, y, 1))
-
-        colored_edges = []
-        for x in range(Lx):
-            for y in range(Ly):
-                a = (x, y, 0)
-                colored_edges += [
-                    (a, (x, y, 1), "X"),
-                    (a, ((x - 1) % Lx, y, 1), "Y"),
-                    (a, (x, (y - 1) % Ly, 1), "Z"),
-                ]
-    else:
-        Graw = nx.Graph()
-        for x in range(Lx):
-            for y in range(Ly):
-                Graw.add_node((x, y, 0))
-                Graw.add_node((x, y, 1))
-
-        colored_edges = []
-        for x in range(Lx):
-            for y in range(Ly):
-                a = (x, y, 0)
-                colored_edges.append((a, (x, y, 1), "X"))
-                if x - 1 >= 0:
-                    colored_edges.append((a, (x - 1, y, 1), "Y"))
-                if y - 1 >= 0:
-                    colored_edges.append((a, (x, y - 1, 1), "Z"))
-
-    G = nx.convert_node_labels_to_integers(Graw, ordering="sorted", label_attribute="old")
-    old = nx.get_node_attributes(G, "old")
-    inv = {old[i]: i for i in old}
-
-    V = []
-    for v in G.nodes():
-        V += [{v: "X"}, {v: "Y"}, {v: "Z"}]
-
-    seen = set()
-    for a, b, t in colored_edges:
-        ia, ib = inv[a], inv[b]
-        key = tuple(sorted((ia, ib))) + (t,)
-        if key in seen:
-            continue
-        seen.add(key)
-        V.append({ia: t, ib: t})
-
-    return G, V
 
 
 def build_Wc(U_ops: List[Tuple[str, ...]], root_patch: int) -> List[Tuple[str, ...]]:
@@ -501,6 +552,13 @@ class Job:
     R_geom: Optional[int] = None
     coeff_bound: int = 3
     root_label: str = "bulk"
+    boundary: str = "periodic"
+    local_mode: str = "rooted_ball"
+    root_coord: Optional[Any] = None
+    covered_root_count: Optional[int] = None
+    covered_root_sample: Optional[List[Any]] = None
+    coverage_note: Optional[str] = None
+    witness_weight_cap: Optional[int] = None
 
 
 def make_graph(kind: str, args: Tuple) -> nx.Graph:
@@ -514,8 +572,12 @@ def make_graph(kind: str, args: Tuple) -> nx.Graph:
         return grid_graph(*args, periodic=False)
     if kind == "cubic_periodic":
         return cubic_graph(*args, periodic=True)
+    if kind == "cubic_open":
+        return cubic_graph(*args, periodic=False)
     if kind == "triangular_torus":
         return triangular_torus_graph(*args)
+    if kind == "triangular_open":
+        return triangular_open_graph(*args)
     if kind == "honeycomb_torus":
         return honeycomb_torus_graph(*args)
     if kind == "honeycomb_open":
@@ -526,21 +588,22 @@ def make_graph(kind: str, args: Tuple) -> nx.Graph:
 def build_local_family_for_job(job: Job) -> Tuple[List[Tuple[str, ...]], List[int], int]:
     if job.family == "dense":
         G = make_graph(job.graph_kind, job.graph_args)
+        if job.local_mode == "formal_uc":
+            return formal_dense_family_uc(G, job.root, job.R_patch, job.k, job.R_geom)
         return local_dense_family_direct(G, job.root, job.R_patch, job.k, job.R_geom)
 
     if job.family == "xyz":
         G = make_graph(job.graph_kind, job.graph_args)
         V = xyz_fields_family(G)
+        if job.local_mode == "formal_uc":
+            return build_formal_uc_from_global_terms(G, V, job.root, job.R_patch)
         return build_local_from_global_terms(G, V, job.root, job.R_patch)
 
     if job.family == "full_nn_2body_all_fields":
         G = make_graph(job.graph_kind, job.graph_args)
         V = full_nn_2body_all_fields_family(G)
-        return build_local_from_global_terms(G, V, job.root, job.R_patch)
-
-    if job.family == "kitaev_honey_2d":
-        periodic = job.graph_kind == "honeycomb_torus"
-        G, V = kitaev_honeycomb_fields_fixed(*job.graph_args, periodic=periodic)
+        if job.local_mode == "formal_uc":
+            return build_formal_uc_from_global_terms(G, V, job.root, job.R_patch)
         return build_local_from_global_terms(G, V, job.root, job.R_patch)
 
     raise ValueError(job.family)
@@ -568,6 +631,13 @@ def run_job(job: Job, memory_cap_gb: float) -> Dict[str, Any]:
         "R_patch": job.R_patch,
         "root": job.root,
         "root_label": job.root_label,
+        "boundary": job.boundary,
+        "local_mode": job.local_mode,
+        "root_coord": job.root_coord,
+        "covered_root_count": job.covered_root_count,
+        "covered_root_sample": job.covered_root_sample,
+        "coverage_note": job.coverage_note,
+        "witness_weight_cap": job.witness_weight_cap,
         "patch_sites": len(patch_nodes),
         "elapsed_sec": float(elapsed),
         **out,
