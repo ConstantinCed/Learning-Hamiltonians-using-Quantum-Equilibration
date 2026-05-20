@@ -1,33 +1,10 @@
-"""Witness-Hamiltonian non-degeneracy: unified driver.
-
-Single entry point that defines every job, dispatches to the dense or
-sparse rank backend depending on the problem size, and writes results
-to ``<family>/<lattice>.json``.
-
-Usage::
-
-    python3 run_witness.py                          # run every job (skip already-done)
-    python3 run_witness.py --families dense         # restrict to a family
-    python3 run_witness.py --lattices cycle cubic_periodic
-    python3 run_witness.py --force                  # re-run even if entry exists
-    python3 run_witness.py --dry-run                # list jobs only
-    python3 run_witness.py --memory-cap-gb 16       # raise the dense backend cap
-
-Dispatch rule:
-    * ``|U_c| <= 2000`` -> dense backend (``witness_structured.run_job``)
-    * ``|U_c| >  2000`` -> sparse Gram backend (``additional_runs.run_job_sparse``)
-
-Results from each job are merged into the per-family JSON, deduplicating
-on ``(graph_args, k, R_geom, R_patch, root_label)`` and preferring the
-entry that found a witness.
-"""
+"""Driver: defines every certification job and dispatches to the right backend."""
 
 import argparse
 import json
 import os
 import sys
 import time
-from dataclasses import asdict
 from typing import Any, Dict, List, Tuple
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -35,7 +12,7 @@ sys.path.insert(0, HERE)
 
 from witness_structured import (  # noqa: E402
     Job,
-    local_dense_family_direct,
+    build_local_family_for_job,
     run_job,
 )
 from additional_runs import run_job_sparse  # noqa: E402
@@ -43,13 +20,7 @@ from additional_runs import run_job_sparse  # noqa: E402
 DENSE_TO_SPARSE_UC_THRESHOLD = 2000
 
 
-# ---------------------------------------------------------------------------
-# Job catalogue (organised by family)
-# ---------------------------------------------------------------------------
-
-
 def _dense_cycle_jobs() -> List[Job]:
-    """Generic local family on the 1D periodic chain."""
     specs = [
         # (k, R_geom, L, seed)
         (2, 1,  9,    119),
@@ -84,7 +55,6 @@ def _dense_cycle_jobs() -> List[Job]:
 
 
 def _dense_grid_jobs() -> List[Job]:
-    """Generic local family on the 2D square (periodic) lattice."""
     specs = [
         # (k, R_geom, L, seed) -- multiple L per (k,R) are redundancy
         # checks (identical by patch isomorphism for L >= 2R+2).
@@ -117,7 +87,6 @@ def _dense_grid_jobs() -> List[Job]:
 
 
 def _dense_triangular_jobs() -> List[Job]:
-    """Generic local family on the 2D triangular torus."""
     specs = [
         (2, 1, 4,  4124),
         (2, 2, 5,  5225),
@@ -147,7 +116,6 @@ def _dense_triangular_jobs() -> List[Job]:
 
 
 def _dense_honeycomb_jobs() -> List[Job]:
-    """Generic local family on the 2D honeycomb torus."""
     specs = [
         (2, 1, 3,  3123),
         (2, 2, 4,  4224),
@@ -177,9 +145,7 @@ def _dense_honeycomb_jobs() -> List[Job]:
 
 
 def _dense_cubic_jobs() -> List[Job]:
-    """Generic local family on the 3D cubic (periodic) lattice."""
     specs = [
-        # (k, R_geom, L, seed)
         (2, 1, 3,  3123),
         (2, 2, 4,  4224),
         (3, 1, 3,  3133),
@@ -206,7 +172,6 @@ def _dense_cubic_jobs() -> List[Job]:
 
 
 def _xyz_cycle_jobs() -> List[Job]:
-    """XYZ chain with on-site X,Y,Z fields, 1D periodic."""
     return [
         Job(
             tag=f"xyz_cycle_L{L}",
@@ -223,7 +188,6 @@ def _xyz_cycle_jobs() -> List[Job]:
 
 
 def _full_nn_cycle_jobs() -> List[Job]:
-    """Full nearest-neighbour 2-body family with all on-site fields, 1D periodic."""
     return [
         Job(
             tag=f"fullnn_cycle_L{L}",
@@ -240,7 +204,6 @@ def _full_nn_cycle_jobs() -> List[Job]:
 
 
 def _kitaev_honeycomb_jobs() -> List[Job]:
-    """Kitaev honeycomb model with on-site X,Y,Z fields, honeycomb torus."""
     return [
         Job(
             tag=f"kitaev_honey_L{L}",
@@ -256,7 +219,6 @@ def _kitaev_honeycomb_jobs() -> List[Job]:
     ]
 
 
-# Single registry: family -> list of jobs
 ALL_JOBS_BY_FAMILY: Dict[str, List[Job]] = {
     "dense": (
         _dense_cycle_jobs()
@@ -269,11 +231,6 @@ ALL_JOBS_BY_FAMILY: Dict[str, List[Job]] = {
     "full_nn_2body_all_fields": _full_nn_cycle_jobs(),
     "kitaev_honey_2d": _kitaev_honeycomb_jobs(),
 }
-
-
-# ---------------------------------------------------------------------------
-# Result I/O (per-family JSON files)
-# ---------------------------------------------------------------------------
 
 
 def _result_path(family: str, lattice: str) -> str:
@@ -320,7 +277,6 @@ def _entry_key(r: Dict[str, Any]) -> Tuple:
 
 
 def _merge_entry(rows: List[Dict[str, Any]], new: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Upsert ``new`` into ``rows`` keyed by ``_entry_key``; prefer found_witness=True."""
     new_key = _entry_key(new)
     out = []
     replaced = False
@@ -340,38 +296,13 @@ def _merge_entry(rows: List[Dict[str, Any]], new: Dict[str, Any]) -> List[Dict[s
     return out
 
 
-# ---------------------------------------------------------------------------
-# Dispatch + driver
-# ---------------------------------------------------------------------------
-
-
-def _build_family_size(job: Job) -> int:
-    """Cheap upfront estimate of |U_c| for dispatch (re-built inside backends)."""
-    from witness_structured import (  # local import; avoids cycles in tests
-        make_graph,
-        xyz_fields_family,
-        full_nn_2body_all_fields_family,
-        kitaev_honeycomb_fields_fixed,
-    )
-    G = make_graph(job.graph_kind, job.graph_args)
-    if job.family == "dense":
-        U_ops, _, _ = local_dense_family_direct(
-            G, job.root, job.R_patch, job.k, job.R_geom
-        )
-    elif job.family == "xyz":
-        U_ops, _, _ = xyz_fields_family(G, job.root, job.R_patch)
-    elif job.family == "full_nn_2body_all_fields":
-        U_ops, _, _ = full_nn_2body_all_fields_family(G, job.root, job.R_patch)
-    elif job.family == "kitaev_honey_2d":
-        U_ops, _, _ = kitaev_honeycomb_fields_fixed(G, job.root, job.R_patch)
-    else:
-        raise ValueError(job.family)
+def _family_size(job: Job) -> int:
+    U_ops, _, _ = build_local_family_for_job(job)
     return len(U_ops)
 
 
 def run_one(job: Job, memory_cap_gb: float = 8.0, verbose: bool = True) -> Dict[str, Any]:
-    """Run ``job`` with dense or sparse backend depending on |U_c|."""
-    Uc_size = _build_family_size(job)
+    Uc_size = _family_size(job)
     if Uc_size > DENSE_TO_SPARSE_UC_THRESHOLD:
         if verbose:
             print(f"  [sparse backend, |U_c|={Uc_size}>{DENSE_TO_SPARSE_UC_THRESHOLD}]")
@@ -414,7 +345,6 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    # Flatten and filter the job catalogue
     jobs: List[Job] = []
     for fam, fam_jobs in ALL_JOBS_BY_FAMILY.items():
         if fam not in args.families:
@@ -432,7 +362,6 @@ def main() -> None:
                   f"k={j.k} R={j.R_geom} Rpatch={j.R_patch})")
         return
 
-    # Cache (family, lattice) -> current rows
     cache: Dict[Tuple[str, str], List[Dict[str, Any]]] = {}
 
     def get_rows(fam, lat):

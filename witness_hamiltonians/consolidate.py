@@ -1,4 +1,4 @@
-"""Print consolidated witness-Hamiltonian coverage tables."""
+"""Pretty-print consolidated witness-Hamiltonian coverage."""
 import json
 import os
 from collections import defaultdict

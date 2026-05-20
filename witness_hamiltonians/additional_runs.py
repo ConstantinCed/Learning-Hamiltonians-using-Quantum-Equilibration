@@ -1,25 +1,4 @@
-"""Sparse / Gram-matrix backend for the witness-Hamiltonian rank check.
-
-When the dense |W|x|U| commutator matrix exceeds available memory, we
-instead build a sparse representation of ``C(h)`` and read the rank
-from the spectrum of the dense |U|x|U| Gram matrix ``G(h) = C(h)^H C(h)``.
-
-This module is a pure library (no CLI, no job suites). See
-``run_witness.py`` for a driver that chooses between the dense backend
-in ``witness_structured.py`` and the sparse backend defined here.
-
-Pipeline:
-  1. ``precompute_sparse_structure`` enumerates anticommuting Pauli pairs
-     of the local family ``U_c`` with non-trivial action at the root.
-  2. ``commutator_rank_for_h`` materialises a sparse ``C(h)``, forms the
-     dense Gram ``G = C^H C``, and computes its spectrum.
-  3. ``search_witness`` / ``run_job_sparse`` wrap this in a witness
-     search compatible with the :class:`Job` dataclass.
-
-The complex Hermitian eigendecomposition is the bottleneck.  On Apple
-Accelerate (``zheevd``) the |U|~7000-11000 jobs take ~10-40 minutes per
-trial; witnesses are typically found on the first trial.
-"""
+"""Sparse backend: rank of C(h) via the spectrum of the dense Gram C^H C."""
 
 import os
 import sys
@@ -38,13 +17,7 @@ from witness_structured import (  # noqa: E402
 )
 
 
-# --------------------------------------------------------------------------
-# Symplectic preprocessing
-# --------------------------------------------------------------------------
-
-
 def pauli_to_symplectic(U_ops: List[Tuple[str, ...]]) -> Tuple[np.ndarray, np.ndarray, int]:
-    """Pack each U operator into (x, z) bitmasks; return arrays and n_qubits."""
     m = len(U_ops)
     n_q = len(U_ops[0]) if m > 0 else 0
     xs = np.zeros(m, dtype=np.int64)
@@ -69,14 +42,6 @@ def precompute_sparse_structure(
     U_ops: List[Tuple[str, ...]],
     root_patch: int,
 ) -> Dict[str, Any]:
-    """Enumerate (iu, iv, row=index_of_W, phase) for every anticommuting pair.
-
-    The phase stored is ``2 * ph_uv`` because for anticommuting Paulis
-    ``ph_uv - ph_vu = 2 ph_uv``.
-
-    Rows of W are deduplicated by packing (wx, wz) into a single uint64 key
-    (requires n_qubits <= 32, which holds for every patch we touch here).
-    """
     m = len(U_ops)
     xs, zs, n_q = pauli_to_symplectic(U_ops)
     assert n_q <= 32, f"patch has {n_q} sites; this fast packing assumes <=32"
@@ -85,7 +50,7 @@ def precompute_sparse_structure(
     root_mask = np.int64(1 << root_patch)
     i_powers = np.array([1 + 0j, 0 + 1j, -1 + 0j, 0 - 1j], dtype=np.complex128)
 
-    chunk_keys: List[np.ndarray] = []   # uint64 packed (wx, wz)
+    chunk_keys: List[np.ndarray] = []
     chunk_iu: List[np.ndarray] = []
     chunk_iv: List[np.ndarray] = []
     chunk_phase: List[np.ndarray] = []
@@ -124,9 +89,7 @@ def precompute_sparse_structure(
         ph_uv = sign.astype(np.complex128) * i_pow
         coeff = 2.0 * ph_uv
 
-        # Pack (wx, wz) into a single uint64 key
         keys = (w_xa.astype(np.uint64) << np.uint64(32)) | w_za.astype(np.uint64)
-
         chunk_keys.append(keys)
         chunk_iu.append(np.full(ivs.size, iu, dtype=np.int64))
         chunk_iv.append(ivs.astype(np.int64))
@@ -158,11 +121,6 @@ def precompute_sparse_structure(
         "n_W": n_W,
         "n_U": m,
     }
-
-
-# --------------------------------------------------------------------------
-# Rank check via Gram matrix
-# --------------------------------------------------------------------------
 
 
 def commutator_rank_for_h(

@@ -1,10 +1,4 @@
-"""Core library for the witness-Hamiltonian non-degeneracy checks.
-
-This module provides the building blocks (graphs, local Pauli families,
-commutator matrices, dense rank search and a small ``Job`` dataclass).
-Driver scripts (see ``run_witness.py``) import these helpers; this file
-intentionally does not define any job suites or ``__main__`` block.
-"""
+"""Graphs, local Pauli families, and dense rank search for the witness check."""
 
 import itertools
 import json
@@ -89,7 +83,6 @@ def pauli_tuple_to_xz(op: Tuple[str, ...]) -> Tuple[int, int]:
 
 
 def symplectic_commute_parity(x1: int, z1: int, x2: int, z2: int) -> int:
-    # ``int.bit_count`` is Python 3.10+; use the bin/count fallback for 3.9.
     return ((bin(x1 & z2).count("1") + bin(z1 & x2).count("1")) & 1)
 
 
@@ -579,9 +572,3 @@ def run_job(job: Job, memory_cap_gb: float) -> Dict[str, Any]:
         "elapsed_sec": float(elapsed),
         **out,
     }
-
-
-# ---------------------------------------------------------------------------
-# (Historical job suites and the CLI ``main()`` were moved to run_witness.py.
-#  This file is now a pure library: import what you need.)
-# ---------------------------------------------------------------------------

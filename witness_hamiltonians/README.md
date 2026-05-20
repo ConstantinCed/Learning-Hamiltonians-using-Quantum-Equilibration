@@ -1,61 +1,45 @@
-# Witness Hamiltonians: local non-degeneracy certifications
+# Witness Hamiltonians
 
-This folder contains the numerical witnesses that certify, for several
-Hamiltonian families on standard lattices, that the local commutator
-matrix `C(h)` attains its maximal possible rank `|U_c| - 1` for a
-single integer coefficient vector `h`. Because the rank condition is
-Zariski-open, one such witness certifies the generic statement.
-
-Whenever the periodic size `L` satisfies `L >= 2 * R_patch + 2` the
-local patch is isomorphic to the corresponding ball in the infinite
-lattice, so the certification at one such `L` transfers verbatim to
-every larger `L` and to the thermodynamic limit.
+Numerical witnesses certifying that the local commutator matrix `C(h)` attains
+maximal rank `|U_c| - 1` for various Hamiltonian families. One witness certifies
+the generic statement (rank condition is Zariski-open).
 
 ## Layout
 
 ```
 witness_hamiltonians/
-├── README.md                       this file
-├── run_witness.py                  single driver: defines every job
-├── consolidate.py                  print combined coverage table
-├── witness_structured.py           core library (graphs, families, dense rank)
-├── additional_runs.py              sparse Gram-matrix backend
-├── dense/                          generic local family U_c^{(k,R)}
-│   ├── cycle.json                  1D periodic chain
-│   ├── grid_periodic.json          2D square torus
-│   ├── triangular_torus.json       2D triangular torus
-│   ├── honeycomb_torus.json        2D honeycomb torus
-│   └── cubic_periodic.json         3D cubic torus
-├── xyz/cycle.json                  XYZ chain + on-site X,Y,Z fields
-├── full_nn_2body_all_fields/cycle.json   full NN 2-body + on-site fields
-└── kitaev_honey_2d/honeycomb_torus.json  Kitaev honeycomb + on-site fields
+├── README.md
+├── run_witness.py          driver: defines jobs and dispatches to backends
+├── consolidate.py          print coverage summary
+├── witness_structured.py    core library (graphs, families, dense rank)
+├── additional_runs.py       sparse Gram-matrix backend
+├── dense/                   generic local family U_c^{(k,R)}
+│   ├── cycle.json
+│   ├── grid_periodic.json
+│   ├── triangular_torus.json
+│   ├── honeycomb_torus.json
+│   └── cubic_periodic.json
+├── xyz/cycle.json
+├── full_nn_2body_all_fields/cycle.json
+└── kitaev_honey_2d/honeycomb_torus.json
 ```
 
-Each JSON file is a list of result entries (one per `(L, k, R, R_patch)`
-cell that was certified); the `found_witness` field flags successes.
+## Reproducing
 
-## Reproducing the data
-
-The pre-computed results are checked in; you do not need to re-run.
-To redo any subset:
+Results are checked in. To redo:
 
 ```
 python3 run_witness.py --dry-run                 # list jobs
-python3 run_witness.py                           # run only the missing cells
-python3 run_witness.py --families dense          # restrict to a family
+python3 run_witness.py                           # run missing cells
+python3 run_witness.py --families dense          # restrict to family
 python3 run_witness.py --lattices cycle cubic_periodic
 python3 run_witness.py --force                   # re-run everything
-python3 run_witness.py --memory-cap-gb 16        # raise the dense backend cap
+python3 run_witness.py --memory-cap-gb 16        # raise memory cap
 ```
 
-The driver auto-selects the dense or sparse backend based on `|U_c|`;
-results are merged into the appropriate `<family>/<lattice>.json`,
-deduplicating by `(graph_args, k, R_geom, R_patch, root_label)` and
-preferring entries that found a witness.
+Backend dispatch: `|U_c| <= 2000` → dense, `> 2000` → sparse Gram.
 
-## Coverage summary
-
-Print the (k, R) coverage of each family at any time:
+## Coverage
 
 ```
 python3 consolidate.py
@@ -66,12 +50,12 @@ Current dense-family coverage:
 | lattice              | k = 2 R range | k = 3 R range | k = 4 R range |
 |----------------------|---------------|---------------|---------------|
 | 1D periodic chain    | 1..5          | 1..5          | 2..4          |
-| 2D square (periodic) | 1..3          | 1..2          | -             |
-| 2D triangular torus  | 1..3          | 1..2          | -             |
-| 2D honeycomb torus   | 1..3          | 1..2          | -             |
-| 3D cubic (periodic)  | 1..2          | 1..2          | -             |
+| 2D square (periodic) | 1..3          | 1..2          | 1, 2          |
+| 2D triangular torus  | 1..3          | 1..2          | 1             |
+| 2D honeycomb torus   | 1..3          | 1..2          | 1, 2          |
+| 3D cubic (periodic)  | 1..2          | 1..2          | 1             |
 
-Structured nearest-neighbour families (all with `R_patch = 1`):
+Structured NN families (R_patch = 1):
 
 | family                       | lattice           | sizes L      |
 |------------------------------|-------------------|--------------|
