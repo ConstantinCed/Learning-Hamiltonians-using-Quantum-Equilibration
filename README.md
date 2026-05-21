@@ -13,7 +13,7 @@ Hamiltonian witness computations and TFIM scaling experiments.
 
 Witness-Hamiltonian results certify non-degeneracy of local commutator matrices
 for dense Pauli families on periodic and open-boundary lattices (chain, square,
-triangular, honeycomb, cubic) and for the structured 1D XYZ chain. The full
-nearest-neighbour all-fields chain is included in the dense `k=2, R=1` chain
-case, rather than treated as a separate structured family. See
-`witness_hamiltonians/README.md` for details.
+triangular, honeycomb, cubic), for the structured 1D XYZ chain with on-site
+fields, and for the exact two-body/no-field Pauli family on all of the same
+periodic and open-boundary lattice cases. See `witness_hamiltonians/README.md`
+for details.
