@@ -1,0 +1,96 @@
+{
+  "generated_at": "2026-06-03T17:52:26.646454+00:00",
+  "local_types": [
+    {
+      "R": 2,
+      "W_count": 1272432,
+      "active_h_size": 2244,
+      "anticommuting_pairs": 6782136,
+      "backend": "cpp_active_sparse_modular_elimination",
+      "boundary": "periodic",
+      "build_runtime_seconds": 47.41764875,
+      "coordinate_hash": "f294fa5d126819e9d0a3600b1aedb209e7159142689ddc8a33ca98226fc37068",
+      "d_U": 127848,
+      "family": "dense",
+      "graph_L": 11,
+      "integer_null_check": true,
+      "k": 4,
+      "lattice": "triangular",
+      "local_type_id": 0,
+      "message": "exact integer null check and exact C++ odd-prime finite-field rank check passed",
+      "mode": "theorem",
+      "multiplicity": 121,
+      "nnz": 6782136,
+      "pair_checks": 9732885,
+      "peak_memory_mb": 2458.75,
+      "prime": 2147483647,
+      "rank_input_nnz": 6782136,
+      "rank_mod_p": 127847,
+      "rank_processed_rows": 1272414,
+      "rank_runtime_seconds": 1.2780813339999995,
+      "rank_target_reached": true,
+      "root_coord": [
+        0,
+        0
+      ],
+      "root_vertex": 0,
+      "row_hash": "286bb2e46957b92acd32ea6f428a790f86a600daa9c832cd5b7778f4976c0bdd",
+      "runtime_seconds": 51.838201,
+      "skipped_pairs_not_rooted": 0,
+      "status": "exactly_certified",
+      "support_count": 2372,
+      "target_rank": 127847,
+      "witness_attempt": 0,
+      "witness_generation": {
+        "rule": "Python random.Random(seed).choice([-3,-2,-1,1,2,3]) on coordinates with Pauli weight <= witness_weight_cap; zero otherwise",
+        "values": [
+          -3,
+          -2,
+          -1,
+          1,
+          2,
+          3
+        ]
+      },
+      "witness_hash": "27b604b3959664c421ab590b92bde6dbbfcfa8d70604837d5f57b7952090cd84",
+      "witness_seed": 1729,
+      "witness_weight_cap": 2
+    }
+  ],
+  "overall_status": "exactly_certified",
+  "parameters": {
+    "R": 2,
+    "backend": "cpp_active_sparse",
+    "boundary": "periodic",
+    "family": "dense",
+    "k": 4,
+    "lattice": "triangular",
+    "max_dimension": null,
+    "max_pair_checks": 500000000,
+    "max_rank_seconds": null,
+    "max_witnesses": 20,
+    "mode": "theorem",
+    "prime": 2147483647,
+    "seed": 1729,
+    "witness_weight_cap": 2
+  },
+  "peak_memory_mb": 2458.75,
+  "runtime_seconds": 52.089577708,
+  "schema_version": 2,
+  "software_versions": {
+    "certifier_backend": "cpp_active_sparse",
+    "platform": "macOS-15.3.1-arm64-arm-64bit",
+    "python": "3.9.6 (default, Apr 30 2025, 02:07:17) \n[Clang 17.0.0 (clang-1700.0.13.5)]"
+  },
+  "type_enumeration": {
+    "graph_L": 11,
+    "iso_checks": 0,
+    "previous_type_count": null,
+    "radius": 4,
+    "stabilization_Ls": [
+      11
+    ],
+    "stabilized": true,
+    "type_count": 1
+  }
+}

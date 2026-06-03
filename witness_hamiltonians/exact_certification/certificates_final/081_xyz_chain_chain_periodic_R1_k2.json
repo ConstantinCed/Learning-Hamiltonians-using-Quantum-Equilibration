@@ -1,0 +1,110 @@
+{
+  "anchoring": null,
+  "generated_at": "2026-06-02T17:51:14.039524+00:00",
+  "local_types": [
+    {
+      "R": 1,
+      "W_count": 33,
+      "anticommuting_pairs": 126,
+      "backend": "python_sparse_modular_elimination",
+      "boundary": "periodic",
+      "build_runtime_seconds": 0.0004615830000000154,
+      "coordinate_hash": "ea6f3233559dbb0ee85a635ec17f249e6234716aca9238c27395ad42d6bc2760",
+      "d_U": 21,
+      "family": "xyz_chain",
+      "graph_L": 7,
+      "integer_null_check": true,
+      "k": 2,
+      "lattice": "chain",
+      "local_type_id": 0,
+      "message": "exact integer null check and exact odd-prime finite-field rank check passed",
+      "mode": "theorem",
+      "multiplicity": 7,
+      "nnz": 90,
+      "pair_checks": 441,
+      "peak_memory_mb": 25.9375,
+      "pivot_columns": [
+        1,
+        0,
+        2,
+        4,
+        5,
+        9,
+        3,
+        10,
+        8,
+        7,
+        11,
+        15,
+        6,
+        16,
+        12,
+        13,
+        14,
+        17,
+        19,
+        18
+      ],
+      "pivot_columns_truncated": false,
+      "prime": 2147483647,
+      "rank_mod_p": 20,
+      "rank_runtime_seconds": 0.0001317919999999917,
+      "rank_target_reached": true,
+      "root_coord": 0,
+      "root_vertex": 0,
+      "row_hash": "cc8fa613452a4bf16dc23e10592cc22dc4cfa9c81dff424da72251a4b6bbf81b",
+      "runtime_seconds": 0.0007305000000000228,
+      "skipped_pairs_not_rooted": 36,
+      "status": "exactly_certified",
+      "support_count": 7,
+      "target_rank": 20,
+      "witness_attempt": 0,
+      "witness_generation": {
+        "rule": "Python random.Random(seed).choice([-3,-2,-1,1,2,3]) for each coordinate in local coordinate order",
+        "values": [
+          -3,
+          -2,
+          -1,
+          1,
+          2,
+          3
+        ]
+      },
+      "witness_hash": "0112a3090110363f69da23d4abea068ba8e0789c9398ce350f525d703172b854",
+      "witness_seed": 1729
+    }
+  ],
+  "overall_status": "exactly_certified",
+  "parameters": {
+    "R": 1,
+    "backend": "python_sparse",
+    "boundary": "periodic",
+    "family": "xyz_chain",
+    "k": 2,
+    "lattice": "chain",
+    "max_pair_checks": 5000000,
+    "max_witnesses": 20,
+    "mode": "theorem",
+    "prime": 2147483647,
+    "seed": 1729
+  },
+  "peak_memory_mb": 27.84375,
+  "runtime_seconds": 0.013092624999999997,
+  "schema_version": 1,
+  "software_versions": {
+    "certifier_backend": "pure_python",
+    "platform": "macOS-15.5-arm64-arm-64bit",
+    "python": "3.9.6 (default, Apr 30 2025, 02:07:17) \n[Clang 17.0.0 (clang-1700.0.13.5)]"
+  },
+  "type_enumeration": {
+    "graph_L": 7,
+    "iso_checks": 6,
+    "previous_type_count": null,
+    "radius": 2,
+    "stabilization_Ls": [
+      7
+    ],
+    "stabilized": true,
+    "type_count": 1
+  }
+}

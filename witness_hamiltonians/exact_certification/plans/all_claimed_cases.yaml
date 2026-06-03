@@ -1,0 +1,114 @@
+cases:
+  - stage: A
+    family: xyz_chain
+    lattice: chain
+    boundary: periodic
+    R: 1
+    k: 2
+    max_witnesses: 20
+    max_pair_checks: 5000000
+
+  - stage: A
+    family: exact_two_body_no_fields
+    lattices: [chain]
+    boundaries: [open, periodic]
+    R: [1, 2]
+    max_witnesses: 20
+    max_pair_checks: 5000000
+
+  - stage: A
+    family: dense
+    lattices: [chain]
+    boundaries: [open, periodic]
+    R: [1, 2]
+    k: [2, 3, 4]
+    max_witnesses: 20
+    max_pair_checks: 20000000
+
+  - stage: A
+    family: dense
+    lattices: [square]
+    boundaries: [periodic]
+    R: 1
+    k: [2, 3, 4]
+    max_witnesses: 20
+    max_pair_checks: 5000000
+
+  - stage: B
+    family: dense
+    lattices: [square]
+    boundaries: [open]
+    R: 1
+    k: [2, 3, 4]
+    max_witnesses: 20
+    max_pair_checks: 5000000
+
+  - stage: B
+    family: dense
+    lattices: [square]
+    boundaries: [periodic, open]
+    R: 2
+    k: [2, 3]
+    max_witnesses: 20
+    max_pair_checks: 20000000
+
+  - stage: B
+    family: dense
+    lattices: [triangular, honeycomb]
+    boundaries: [periodic, open]
+    R: 1
+    k: [2, 3, 4]
+    max_witnesses: 20
+    max_pair_checks: 10000000
+
+  - stage: B
+    family: exact_two_body_no_fields
+    lattices: [square, triangular, honeycomb]
+    boundaries: [periodic, open]
+    R: [1, 2]
+    max_witnesses: 20
+    max_pair_checks: 10000000
+
+  - stage: C
+    family: dense
+    lattices: [square]
+    boundaries: [periodic, open]
+    R: 2
+    k: 4
+    max_witnesses: 20
+    max_pair_checks: 20000000
+
+  - stage: C
+    family: dense
+    lattices: [triangular, honeycomb]
+    boundaries: [periodic, open]
+    R: 2
+    k: [2, 3, 4]
+    max_witnesses: 20
+    max_pair_checks: 20000000
+
+  - stage: C
+    family: dense
+    lattices: [cubic]
+    boundaries: [periodic, open]
+    R: 1
+    k: [2, 3, 4]
+    max_witnesses: 20
+    max_pair_checks: 10000000
+
+  - stage: C
+    family: exact_two_body_no_fields
+    lattices: [cubic]
+    boundaries: [periodic, open]
+    R: [1, 2]
+    max_witnesses: 20
+    max_pair_checks: 10000000
+
+  - stage: D
+    family: dense
+    lattices: [cubic]
+    boundaries: [periodic, open]
+    R: 2
+    k: [2, 3, 4]
+    max_witnesses: 20
+    max_pair_checks: 20000000

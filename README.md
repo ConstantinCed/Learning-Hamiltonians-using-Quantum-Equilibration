@@ -4,16 +4,15 @@ Hamiltonian witness computations and TFIM scaling experiments.
 
 ## Structure
 
-- `witness_hamiltonians/` — witness-Hamiltonian non-degeneracy certifications
+- `witness_hamiltonians/` — exact witness-Hamiltonian non-degeneracy certificates
 - `TFIM/` — Transverse Field Ising Model scaling
 - `Hamiltonian reconstruction/` — reconstruction algorithms
 - `Weak equilibration/` — equilibration studies
 
 ## Notes
 
-Witness-Hamiltonian results certify non-degeneracy of local commutator matrices
-for dense Pauli families on periodic and open-boundary lattices (chain, square,
-triangular, honeycomb, cubic), for the structured 1D XYZ chain with on-site
-fields, and for the exact two-body/no-field Pauli family on all of the same
-periodic and open-boundary lattice cases. See `witness_hamiltonians/README.md`
-for details.
+The authoritative witness-Hamiltonian results are the exact certificates in
+`witness_hamiltonians/exact_certification/`. They certify all 81 planned
+theorem-level local nondegeneracy cases by exact integer null-vector checks and
+exact rank computation over the odd prime field `F_2147483647`. See
+`witness_hamiltonians/README.md` for details and reproduction commands.
