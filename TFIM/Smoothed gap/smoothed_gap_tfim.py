@@ -116,7 +116,7 @@ def gamma_matrix(P_basis, h_vec):
     for a in range(m):
         for b in range(a, m):
             v = hs_inner(Ls[a], Ls[b])
-            G[a, b] = 0.25 * float(np.real(v))
+            G[a, b] = float(np.real(v))
             G[b, a] = G[a, b]
     return G
 
@@ -125,12 +125,15 @@ def projected_min_eig(G, h_vec):
     h = np.asarray(h_vec, dtype=float)
     nh = np.linalg.norm(h)
     m = G.shape[0]
-    if nh < 1e-15:
-        return float(np.linalg.eigvalsh(G)[0])
-    _, _, Vh = np.linalg.svd(h.reshape(1, -1), full_matrices=True)
-    Q = Vh[1:].T
-    Gp = Q.T @ G @ Q
-    return float(np.linalg.eigvalsh(Gp)[0])
+    if nh >= 1e-15:
+        _, _, Vh = np.linalg.svd(h.reshape(1, -1), full_matrices=True)
+        Q = Vh[1:].T
+        G = Q.T @ G @ Q
+    eigenvalues = np.linalg.eigvalsh(G)
+    tolerance = m * np.finfo(float).eps * np.max(np.abs(eigenvalues))
+    if eigenvalues[0] < -tolerance:
+        raise ArithmeticError("The commutator Gram matrix is not positive semidefinite.")
+    return max(0.0, float(eigenvalues[0]))
 
 
 def main():
@@ -179,7 +182,7 @@ def main():
             print(f"  eps={eps:>+8.4f}  pi_mean={mean:.3e}  N={n_samples}")
 
     with open(csv_path, "w", newline="") as f:
-        w = csv.writer(f)
+        w = csv.writer(f, lineterminator="\n")
         w.writerow(["n", "eps", "mean", "n_samples"])
         for r in rows:
             w.writerow([r[0], f"{r[1]:.6e}", f"{r[2]:.10e}", r[3]])
